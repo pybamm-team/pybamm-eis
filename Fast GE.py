@@ -1,5 +1,14 @@
 # -*- coding: utf-8 -*-
 """
+Created on Thu Jul 21 13:43:07 2022
+
+@author: rish3
+"""
+
+#Tridiagonal solve
+
+# -*- coding: utf-8 -*-
+"""
 Created on Mon Jul 18 15:51:34 2022
 
 @author: rish3
@@ -9,8 +18,7 @@ Created on Mon Jul 18 15:51:34 2022
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-from scipy.sparse import csr_matrix
-import scipy.sparse.linalg
+from numerical_methods import tdge
 
 ##############################################################
 #Numerical solver for Dc'' = iwc, c'(0) = a, -D*c'(1) = j_hat#
@@ -26,62 +34,42 @@ a2 = -j_hat/D
 def get_matrix_problem(w, N):
     # returns the matrix A and vector b for the matrix problem we need to solve
     # Uses ghost points
-
-    second_derivative_matrix = np.diag(
-        np.full(N+3, -2)) + np.diag(np.full(N+2, 1), -1) + np.diag(np.full(N+2, 1), 1)
-    A = 1/2*(D*second_derivative_matrix - w*1.j*np.identity(N+3)/N**2)
+    #altered with EROS to be tridiagonal
+    #returns 3 diagonals
+    diag2 = np.full(N+3, -2-w*1.j/N**2)
+    diag1 = np.full(N+2, 1, dtype = float)
+    diag3 = np.full(N+2, 1, dtype = float)
 
     # c_1 - c_-1 = 2*a1/N
     # c_N+1 - c_N-1 = 2*a2/N
-    A[0][0] = -1
-    A[0][1] = 0
-    A[0][2] = 1
-    A[N+2][N] = -1
-    A[N+2][N+1] = 0
-    A[N+2][N+2] = 1
+    diag2[0] = -1
+    diag2[-1] = 2
+    diag1[-1] = -2
 
     
     b = [2*a1/N] + list(np.zeros(N+1)) + [2*a2/N]
-    return A, b
+    b = np.array(b, dtype = float)
+    return diag1, diag2, diag3, b
 
-    
-def get_solutions(start_freq, end_freq, N):
+def get_solutions(ws, N):
     # gives answers for a list of frequencies
     answers = []
     start_timer = time.time()
-    ws = []
-    w = start_freq
-    start_point = initial_guess(w, N)
-    
-    w_increment = min(w, 1)
-    while w < end_freq:
-        A, b = get_matrix_problem(w, N)
-        A = csr_matrix(A)
+    #start_point = initial_guess(ws[0], N)
+    for w in ws:
+        diag1, diag2, diag3, b = get_matrix_problem(w, N)
         # change the next line for different methods from alternate file
         #c = np.linalg.solve(A, b)
-        num_iters = 0
-        def callback(xk):
-            nonlocal num_iters
-            num_iters += 1
-        c = scipy.sparse.linalg.bicgstab(A, b, x0 = start_point, callback = callback)
-        
-        #c = scipy.sparse.linalg.spsolve(A, b)
-        ans = c[0][N+1]/j_hat
+        #c = scipy.sparse.linalg.bicgstab(A, b, x0 = start_point)
+        c = tdge(diag1, diag2, diag3, b)
+        ans = c/j_hat
 
         answers.append(ans)
-        start_point = c[0]
-        
-        if num_iters < 50:
-            w_increment = 2*w_increment 
-        elif num_iters > 70:
-            w_increment = w_increment/2
-        ws.append(w)
-        w = w + w_increment
-        
+        #start_point = c[0]
     end_timer = time.time()
     time_taken = end_timer - start_timer
 
-    return ws, answers, time_taken
+    return answers, time_taken
 
 def initial_guess(w, N):
     A, b = get_matrix_problem(w, 100)
@@ -131,14 +119,11 @@ def plot_errors_against_frequencies(frequencies, errors):
     
 # Number of steps
 #N = int(input("Number of steps: "))+1
-N = 100
+N = 10000
 
-start_freq = 1
-end_freq = 1000
-#frequencies = range(500, 502)
-frequencies, points, timer = get_solutions(start_freq, end_freq, N)
+frequencies = range(1, 1000)
+points, timer = get_solutions(frequencies, N)
 print(points)
-print(frequencies)
 complex_plot(points)
 errors, percentage_errors = get_errors_against_frequencies(frequencies, points)
 plot_errors_against_frequencies(frequencies, errors)

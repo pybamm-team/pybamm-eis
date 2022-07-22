@@ -20,7 +20,7 @@ w = 1
 second_derivative_matrix = np.diag(
     np.full(N+3, -2)) + np.diag(np.full(N+2, 1), -1) + np.diag(np.full(N+2, 1), 1)
 A = D*second_derivative_matrix - w*1.j*np.identity(N+3)/N**2
-'''
+
 # c_1 - c_-1 = 2*a1/N
 # c_N+1 - c_N-1 = 2*a2/N
 A[0][0] = -1
@@ -29,22 +29,23 @@ A[0][2] = 1
 A[N+2][N] = -1
 A[N+2][N+1] = 0
 A[N+2][N+2] = 1
-'''
-b = [2] + list(np.zeros(N+1)) + [2]
+
+b = [0] + list(np.zeros(N+1)) + [-1/N]
 print(A)
 print(b)
 
 t = time.time()
 c_exact = solve(A, b, 'standard')
 t2 = time.time()
-#c = solve(A, b, 'cg')
-c = scipy.sparse.linalg.cg(A, b) 
+c = solve(A, b, 'bicgstab')
+#c = scipy.sparse.linalg.cg(A, b) 
 t3 = time.time()
 
 A = csr_matrix(A)
 t4 = time.time()
 c_bicg = scipy.sparse.linalg.bicgstab(A, b)
 t5 = time.time()
+
 
 e1 = c[0] - c_exact 
 e2 = c_bicg[0] - c_exact

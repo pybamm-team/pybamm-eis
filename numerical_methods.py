@@ -5,6 +5,7 @@ Created on Tue Jul 12 16:10:36 2022
 @author: rish3
 """
 import numpy as np
+import scipy.sparse
 
 def solve(A, b, method, start_point = 'none'):
     #This file will contain different algorithms to solve Ax = b
@@ -80,25 +81,42 @@ def bicgstab(A, b, start_point):
         alpha_k = rhok/np.dot(r0, vk)
         
         h = xk + alpha_k * pk
+
+        s = rk - alpha_k*vk
+        t = A@s
         
-        if alpha_k*pk[-1] < tol:
-            xk = h
+        wk = np.dot(np.conj(t), s)/np.dot(np.conj(t), t)
+        
+        xk1 = xk
+        xk = h + wk*s
+        
+        if xk[-1] - xk1[-1] < tol:
             break
         else:
-            s = rk - alpha_k*vk
-            t = A@s
-            
-            wk = np.dot(np.conj(t), s)/np.dot(np.conj(t), t)
-            
-            xk = h + wk*s
-            
             rk = s - wk*t
-
         
     return xk
 
-A = np.array([[2+1.j, 1+3.j], [-10.j, 2]])
-b = np.array([1, 5])
+def tdge(diag1, diag2, diag3, b):
+    #diag2 and b must have 1 more entry than 1 and 3
+    #diag2 cannot have any zeros
+    #b is zeros followed by an entry
+    
+    n = len(diag1)
+    alpha = diag2[n]
+    for i in range(n):
+        diag2[i+1] -= diag3[i]*diag1[i]/diag2[i]
+    ghost_point = b[n]/diag2[n]
+    ans = (b[n] - ghost_point*alpha)/diag1[n-1]
+    return ans
+        
+'''
+A = np.array([[2+1.j, 1+3.j, 0, 0, 0], 
+              [-10.j, 2, 3, 0, 5],
+              [0, 1, 2, 3-4.j, 0],
+              [2, 0, 4, 5, 6-1.j], 
+              [1, 2, 3, 4, 5]])
+b = np.array([1, 5, 2, 3, 2+1.j])
 c_exact = solve(A, b, 'standard')
 c = solve(A, b, 'bicgstab')
 import scipy.sparse.linalg
@@ -115,9 +133,15 @@ print(e)
 print()
 print(c2)
 print(e2)
-
-
-
+'''
+'''
+#TDGE TEST
+diag1 = np.full(5, 1, dtype = float)
+diag2 = np.full(6, 3, dtype = float)
+diag3 = diag1
+c = tdge(diag1, diag2, diag3, [0, 0, 0, 0, 0, 3])
+print(c)
+'''
 #CG required positive definite symmetric matrices 
 #Make matrix symmetric?
 #BiCG
