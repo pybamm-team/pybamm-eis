@@ -185,7 +185,8 @@ def thomasMethod(diag1, diag2, diag3, b):
     #b is zeros followed by k entries, k is block size
     m = len(diag1)
     for i in range(m):
-        diag2[i+1] -= diag1[i]@np.linalg.inv(diag2[i])@diag3[i]
+        Q = np.linalg.solve(diag2[i], diag3[i])
+        diag2[i+1] -= diag1[i]@Q
     
     Bm = diag2[m]
     k = np.shape(Bm)[0]
@@ -265,7 +266,6 @@ diag3.append(C1)
 diag2.append(B1)
 b = np.zeros(4)
 b[-1] = 2
-print("PROBLEM1")
 ans = thomasMethod(diag1, diag2, diag3, b)
 print("thomas method answer:" + str(ans))
 
@@ -273,51 +273,6 @@ M = np.array([[2, 4, 0, 0], [2, 9, 0, 0], [1, 2, 2, 4], [3, 4, 2, 9]])
 ans = np.linalg.solve(M, b)
 print("Numpy solve answer: " + str(ans))
 
-print("Problem2")
-import time
-A1 = np.array([[1, 2, 3], [2, 1, 4], [3, 4, 7]], dtype = 'float64')
-B1 = np.array([[4, 1, 6], [2, 3, 4], [1, 7, 10]], dtype = 'float64')
-C1 = np.array([[2, 3, 6], [9, 10, 1], [2, 0, 2]], dtype = 'float64')
-diag1 = []
-diag2 = []
-diag3 = []
-
-for i in range(100):
-    diag1.append(A1)
-    diag2.append(B1)
-    diag3.append(C1)
-diag2.append(B1)
-
-b = np.zeros(303)
-b[-1] = 2
-t1 = time.time()
-ans = thomasMethod(diag1, diag2, diag3, b)
-print("thomas method answer:" + str(ans))
-t2 = time.time()
-
-from scipy.linalg import block_diag
-# c, u, d are center, upper and lower blocks, repeat N times
-N = 101
-A1 = np.array([[1, 2, 3], [2, 1, 4], [3, 4, 7]], dtype = 'float64')
-B1 = np.array([[4, 1, 6], [2, 3, 4], [1, 7, 10]], dtype = 'float64')
-C1 = np.array([[2, 3, 6], [9, 10, 1], [2, 0, 2]], dtype = 'float64')
-c = block_diag(*([B1]*N)) 
-shift = B1.shape[1]
-u = block_diag(*([C1]*N)) 
-u = np.hstack((np.zeros((u.shape[0], shift)), u[:,:-shift]))
-l = block_diag(*([A1]*N)) 
-l = np.hstack((l[:,shift:],np.zeros((l.shape[0], shift))))
-M = c+ u+l
-t3 = time.time()
-ans = np.linalg.solve(M, b)
-print("scipy sparse solve answer: " + str(ans[-1]))
-t4 = time.time()
-
-
-timer1 = t2 - t1
-timer2 = t4 - t3
-print("time thomas method: " + str(timer1))
-print("time scipy sparse solve: " + str(timer2))
 #CG required positive definite symmetric matrices 
 #Make matrix symmetric?
 #BiCG
