@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import time
 from scipy.sparse import csr_matrix
 import scipy.sparse.linalg
+import numerical_methods as nm
 
 ##############################################################
 #Numerical solver for Dc'' = iwc, c'(0) = a, -D*c'(1) = j_hat#
@@ -63,13 +64,13 @@ def get_solutions(start_freq, end_freq, N):
         def callback(xk):
             nonlocal num_iters
             num_iters += 1
-        c = scipy.sparse.linalg.bicgstab(A, b, x0 = start_point, callback = callback)
-        
+        #c = scipy.sparse.linalg.bicgstab(A, b, x0 = start_point, callback = callback)
+        c = nm.bicgstab(A, b, start_point, callback = callback)
         #c = scipy.sparse.linalg.spsolve(A, b)
-        ans = c[0][N+1]/j_hat
+        ans = c[N+1]/j_hat
 
         answers.append(ans)
-        start_point = c[0]
+        start_point = c
         
         if num_iters < 50:
             w_increment = 2*w_increment 
@@ -112,6 +113,7 @@ def get_errors_against_frequencies(frequencies, answers):
     return errors, percentage_errors
 
 def complex_plot(points):
+    #PLOT ANALYTIC SOLUTION AS WELL
     # make a plot
     x = [point.real for point in points]
     y = [-point.imag for point in points]
@@ -128,7 +130,9 @@ def plot_errors_against_frequencies(frequencies, errors):
     plt.ylabel('Errors')
     plt.xlabel('frequency')
     plt.show()
-    
+
+#plot exact solution vs numerical solution over space
+
 # Number of steps
 #N = int(input("Number of steps: "))+1
 N = 100
