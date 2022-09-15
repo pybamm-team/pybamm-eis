@@ -119,7 +119,7 @@ def full_exact_sol(w, N):
             -(1 / (D * y)) * (np.exp(y * x) + np.exp(-y * x)) / (np.exp(y) - np.exp(-y))
         )
         answers.append(ans)
-
+    
     return answers
 
 
@@ -177,7 +177,22 @@ def plot_errors_and_times_against_n(errors_and_times):
     ax2.set_ylabel("time (s)")
     plt.show()
 
-
+def plot_conc_against_x(w, N):
+    x = np.linspace(0, 1, N+1)
+    c_exact = full_exact_sol(w, N)
+    
+    A, b = get_matrix_problem(w, N)
+    c = np.linalg.solve(A, b)
+    print(c)
+    
+    plt.plot(x, c_exact, color='red', label = 'exact')
+    plt.plot(x, c[1:-1], color='green', label = 'linalg')
+    
+    plt.ylabel('c')
+    plt.xlabel('x')
+    print(c_exact)
+    plt.legend()
+    plt.show()
 # Number of steps
 # N = int(input("Number of steps: "))+1
 N = 100
@@ -198,5 +213,5 @@ plot_errors_against_x(errors)
 
 errors_and_times = performance_vs_n(1000, 50, 1000, 50, "standard")
 plot_errors_and_times_against_n(errors_and_times)
-
+plot_conc_against_x(10, N)
 print(timer)
