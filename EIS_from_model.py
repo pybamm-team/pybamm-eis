@@ -6,6 +6,9 @@ Created on Thu Sep 15 12:00:27 2022
 """
 import pybamm
 import numerical_methods as nm
+import numpy as np
+import time
+import scipy.sparse
 
 def EIS(model, start_freq, end_freq, num_points, method = 'auto'):
     #model should be a pybamm object
@@ -21,32 +24,43 @@ def EIS(model, start_freq, end_freq, num_points, method = 'auto'):
     
     #A = iwM - J, Ac = b
     
+    start_timer = time.time()
     
-    if method == "bicgstab":
-        
-    elif method == "prebicgstab":
-        
-    elif method == "cg":
-        
+    if method == "bicgstab" or method == "prebicgstab" or method == "cg":
+        answers, ws = iterative_method(M, J, b, start_freq, end_freq, num_points, method)    
     elif method == "thomas":
-        
+        answers, ws = thomas_method(M, J, b, start_freq, end_freq, num_points)
     elif method == "auto":
-        
+        k = get_k(M)
+        if k >= 8:
+            answers, ws = iterative_method(M, J, b, start_freq, end_freq, num_points, 'bicgstab')
+        else:
+            thomas_method(M, J, b, start_freq, end_freq, num_points, k=k)
     else:
         raise Exception("Not a valid method")
-        
-        
+    
+    end_timer = time.time()
+    time_taken = end_timer - start_timer
+    
+    return answers, ws, time_taken
 def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
     
     # gives answers for a list of frequencies
     answers = []
-    start_timer = time.time()
     ws = []
     w = start_freq
     
     if method == 'prebicgstab':
-        L, U = nm.ILUpreconditioner()
-        start_point = initial_guess(w, N)
+        k = get_k(M)
+        M_diags, J_diags = get_block_diagonals(M, J, k)
+        
+        A_diag = []
+        for i, B in enumerate(J_diags[1]):
+            A_diag.append(B + 1.j*start_freq*M_diags[i])
+            
+        L, U = nm.ILUpreconditioner(J_diags[0], A_diag, J_diags[2])
+        start_point = np.linalg.solve(L, b)
+        start_point = np.linalg.solve(U, start_point)
     else:
         start_point = 'zero'
         
@@ -79,7 +93,10 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
         es = np.abs(np.array(stored_vals) - ans)
         ns = num_iters+1 - np.array(ns)
         
-        if len(answers) != 1:
+        old_c = np.array(c)
+        if len(answers) == 1:
+            w_increment = float(w_increment_max)
+        else:
             kappa = (ans - start_point[-1])/w_increment**2
             ys = []
             for j, e in enumerate(es):
@@ -87,28 +104,102 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
                 ys.append(y)
             y_min = min(ys)
             
-            if ys[-1] = y_min:
+            if ys[-1] == y_min:
                 y_min = 2*y_min - ys[-2]
                 n_val = ns[-1] + 5
                 w_increment = min(n_val/y_min, w_increment_max)
             else:                
                 w_increment = min(ns[ys.index(y_min)]/y_min, w_increment_max)
                 
-            old_increment = w_increment
+            old_increment = float(w_increment)
             start_point = c + w_increment/old_increment * (c - old_c)
-        else:
-            w_increment = w_increment_max
+
         
-        old_c = c
+
 
         ws.append(w)
         w = w + w_increment
 
-    end_timer = time.time()
-    time_taken = end_timer - start_timer
+    return answers, ws
 
-    return answers, ws, time_taken  
+def thomas_method(M, J, b, start_freq, end_freq, num_points, k=0):
+    
+    if k == 0:
+        k = get_k(M)
+    
+    answers = []
+    ws = []
 
-def get_diagonals(A):
-    for i in range(np.shape(A)[0]):
-        if A[i, 0] == 0 :
+    if k == 1:
+        M_diags, J_diags = get_diagonals(M, J, k)
+    else:
+        M_diags, J_diags = get_block_diagonals(M, J, k)
+        
+    for log_w in np.linspace(np.log(start_freq), np.log(end_freq), num_points):
+        w = np.exp(log_w)
+        A_diag = []
+        for i, B in enumerate(J_diags[1]):
+            A_diag.append(B + 1.j*w*M_diags[i])
+            
+        if k == 1:
+            ans = nm.thomasMethod(J_diags[0], A_diag, J_diags[2], b)
+        else:
+            ans = nm.thomasBlockMethod(J_diags[0], A_diag, J_diags[2], b)
+        answers.append(ans)
+        ws.append(w)
+    
+    return answers, ws
+            
+        
+def get_k(M):
+    n = np.shape(M)[0]
+    for i in range(np.shape(M)[0]):
+        if M[i, 0] == 0:
+            if all(M[i, j]==0 for j in range(i)):
+                counter = 0
+                for m in range(i):
+                    if all((M[m, j]==0 and M[j, m]==0) for j in range(i, n)):
+                        counter += 1
+                    else:
+                        break
+                if counter == i:
+                    k = int(i)
+                    break
+    return k
+def get_block_diagonals(M, J, k):
+    n = np.shape(M)[0]
+    m = int(n/k)
+    diag1 = []
+    diag2 = []
+    diag3 = []
+    M_diag = []
+    for i in range(m-1):
+        diag1.append(scipy.sparse.csr_matrix.todense(J[[i*k, (i+1)*k], :][:, [(i+1)*k, (i+2)*k]]).astype('float64'))
+        diag2.append(scipy.sparse.csr_matrix.todense(J[[i*k, (i+1)*k], :][:, [(i)*k, (i+1)*k]]).astype('float64'))
+        diag3.append(scipy.sparse.csr_matrix.todense(J[[(i+1)*k, (i+2)*k], :][:, [(i)*k, (i+1)*k]]).astype('float64'))
+        M_diag.append(scipy.sparse.csr_matrix.todense(M[[i*k, (i+1)*k], :][:, [(i)*k, (i+1)*k]]).astype('float64'))
+    diag2.append(scipy.sparse.csr_matrix.todense(J[[(m-1)*k, m*k], :][:, [(m-1)*k, (m)*k]]).astype('float64'))
+    M_diag.append(scipy.sparse.csr_matrix.todense(M[[(m-1)*k, m*k], :][:, [(m-1)*k, (m)*k]]).astype('float64'))
+    return M_diag, (diag1, diag2, diag3)
+
+def get_diagonals(M, J):
+    #for k = 1 only
+    n = np.shape(M)[0]
+    diag1 = []
+    diag2 = []
+    diag3 = []
+    M_diag = []
+    for i in range(n-1):
+        diag1.append(J[i, i+1])
+        diag2.append(J[i, i])
+        diag3.append(J[i+1, i])
+        M_diag.append(J[i, i])
+    diag2.append(J[n, n])
+    M_diag.append(J[n, n])
+    return M_diag, (diag1, diag2, diag3)
+
+                    
+                        
+                        
+                
+            
