@@ -57,7 +57,7 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
         
         A_diag = []
         for i, B in enumerate(J_diags[1]):
-            A_diag.append(B + 1.j*start_freq*M_diags[i])
+            A_diag.append(1.j*start_freq*M_diags[i]-B)
         
         L, U = nm.ILUpreconditioner(J_diags[0], A_diag, J_diags[2])
         start_point = np.linalg.solve(L, b)
@@ -145,7 +145,7 @@ def thomas_method(M, J, b, start_freq, end_freq, num_points, k=0):
     for w in ws:
         A_diag = []
         for i, B in enumerate(J_diags[1]):
-            A_diag.append(B + 1.j*w*M_diags[i])
+            A_diag.append(1.j*w*M_diags[i]-B)
         if k == 1:
             ans = nm.thomasMethod(J_diags[0], A_diag, J_diags[2], b)
         else:
