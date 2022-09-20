@@ -35,7 +35,7 @@ def EIS(model, start_freq, end_freq, num_points, method = 'auto'):
         if k >= 8:
             answers, ws = iterative_method(M, J, b, start_freq, end_freq, num_points, 'bicgstab')
         else:
-            thomas_method(M, J, b, start_freq, end_freq, num_points, k=k)
+            answers, ws = thomas_method(M, J, b, start_freq, end_freq, num_points, k=k)
     else:
         raise Exception("Not a valid method")
     
@@ -57,7 +57,7 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
         A_diag = []
         for i, B in enumerate(J_diags[1]):
             A_diag.append(B + 1.j*start_freq*M_diags[i])
-            
+        
         L, U = nm.ILUpreconditioner(J_diags[0], A_diag, J_diags[2])
         start_point = np.linalg.solve(L, b)
         start_point = np.linalg.solve(U, start_point)
@@ -65,7 +65,7 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
         start_point = 'zero'
         
     w_increment_max = (end_freq - start_freq) / num_points
-    
+
     while w <= end_freq:
         A = 1.j*w*M - J
 
@@ -78,7 +78,7 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
             if num_iters % 5 == 1:
                 stored_vals.append(xk[-1])
                 ns.append(num_iters)
-
+                
         if method == 'bicgstab':
             c = nm.bicgstab(A, b, start_point=start_point, callback=callback)
         elif method == 'prebicgstab':
@@ -86,7 +86,7 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
         else:
             c = nm.conjugate_gradient(A, b, start_point=start_point, callback=callback)
             
-        ans = c[-1]
+        ans = c[-1][0]
         
         answers.append(ans)
         
@@ -96,20 +96,24 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
         old_c = np.array(c)
         if len(answers) == 1:
             w_increment = float(w_increment_max)
+            start_point = c
         else:
-            kappa = (ans - start_point[-1])/w_increment**2
+            kappa = (np.abs(ans - start_point[-1]))/w_increment**2
             ys = []
             for j, e in enumerate(es):
-                y = 2*ns[j]/(-w_increment+np.sqrt(w_increment**2+4*e/kappa))
+                y = 2*ns[j]/(-w_increment+np.sqrt(w_increment**2+4*(e+0.001)/kappa))
                 ys.append(y)
             y_min = min(ys)
             
             if ys[-1] == y_min:
-                y_min = 2*y_min - ys[-2]
+                try:
+                    y_min = max(2*y_min - ys[-2], [0.01])
+                except IndexError:
+                    pass
                 n_val = ns[-1] + 5
-                w_increment = min(n_val/y_min, w_increment_max)
+                w_increment = min((n_val/y_min)[0], w_increment_max)
             else:                
-                w_increment = min(ns[ys.index(y_min)]/y_min, w_increment_max)
+                w_increment = min((ns[ys.index(y_min)]/y_min)[0], w_increment_max)
                 
             old_increment = float(w_increment)
             start_point = c + w_increment/old_increment * (c - old_c)
@@ -128,19 +132,21 @@ def thomas_method(M, J, b, start_freq, end_freq, num_points, k=0):
         k = get_k(M)
     
     answers = []
-    ws = []
+    
+    
+    ws = np.linspace(start_freq, end_freq, num_points)
+        
 
     if k == 1:
-        M_diags, J_diags = get_diagonals(M, J, k)
+        M_diags, J_diags = get_diagonals(M, J)
     else:
         M_diags, J_diags = get_block_diagonals(M, J, k)
         
-    for log_w in np.linspace(np.log(start_freq), np.log(end_freq), num_points):
-        w = np.exp(log_w)
+        
+    for w in ws:
         A_diag = []
         for i, B in enumerate(J_diags[1]):
             A_diag.append(B + 1.j*w*M_diags[i])
-            
         if k == 1:
             ans = nm.thomasMethod(J_diags[0], A_diag, J_diags[2], b)
         else:
@@ -174,12 +180,12 @@ def get_block_diagonals(M, J, k):
     diag3 = []
     M_diag = []
     for i in range(m-1):
-        diag1.append(scipy.sparse.csr_matrix.todense(J[[i*k, (i+1)*k], :][:, [(i+1)*k, (i+2)*k]]).astype('float64'))
-        diag2.append(scipy.sparse.csr_matrix.todense(J[[i*k, (i+1)*k], :][:, [(i)*k, (i+1)*k]]).astype('float64'))
-        diag3.append(scipy.sparse.csr_matrix.todense(J[[(i+1)*k, (i+2)*k], :][:, [(i)*k, (i+1)*k]]).astype('float64'))
-        M_diag.append(scipy.sparse.csr_matrix.todense(M[[i*k, (i+1)*k], :][:, [(i)*k, (i+1)*k]]).astype('float64'))
-    diag2.append(scipy.sparse.csr_matrix.todense(J[[(m-1)*k, m*k], :][:, [(m-1)*k, (m)*k]]).astype('float64'))
-    M_diag.append(scipy.sparse.csr_matrix.todense(M[[(m-1)*k, m*k], :][:, [(m-1)*k, (m)*k]]).astype('float64'))
+        diag1.append(scipy.sparse.csr_matrix.todense(J[range(i*k, (i+1)*k), :][:, range((i+1)*k, (i+2)*k)]).astype('float64'))
+        diag2.append(scipy.sparse.csr_matrix.todense(J[range(i*k, (i+1)*k), :][:, range((i)*k, (i+1)*k)]).astype('float64'))
+        diag3.append(scipy.sparse.csr_matrix.todense(J[range((i+1)*k, (i+2)*k), :][:, range((i)*k, (i+1)*k)]).astype('float64'))
+        M_diag.append(scipy.sparse.csr_matrix.todense(M[range(i*k, (i+1)*k), :][:, range((i)*k, (i+1)*k)]).astype('float64'))
+    diag2.append(scipy.sparse.csr_matrix.todense(J[range((m-1)*k, m*k), :][:, range((m-1)*k, (m)*k)]).astype('float64'))
+    M_diag.append(scipy.sparse.csr_matrix.todense(M[range((m-1)*k, m*k), :][:, range((m-1)*k, (m)*k)]).astype('float64'))
     return M_diag, (diag1, diag2, diag3)
 
 def get_diagonals(M, J):
@@ -194,9 +200,10 @@ def get_diagonals(M, J):
         diag2.append(J[i, i])
         diag3.append(J[i+1, i])
         M_diag.append(J[i, i])
-    diag2.append(J[n, n])
-    M_diag.append(J[n, n])
-    return M_diag, (diag1, diag2, diag3)
+    diag2.append(J[n-1, n-1])
+    M_diag.append(J[n-1, n-1])
+    J_diags = (diag1, diag2, diag3)
+    return M_diag, J_diags
 
                     
                         
