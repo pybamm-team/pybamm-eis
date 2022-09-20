@@ -7,7 +7,7 @@ Created on Sun Sep 18 20:08:31 2022
 
 import pybamm
 import numpy as np
-from EIS_from_model import EIS
+from EIS_from_model import EIS, nyquist_plot
 
 model = pybamm.BaseModel()
 
@@ -66,15 +66,21 @@ param.process_model(model)
 param.process_geometry(geometry)
 
 submesh_types = {"rod": pybamm.Uniform1DSubMesh}
-var_pts = {x: 8}
+var_pts = {x: 100}
 mesh = pybamm.Mesh(geometry, submesh_types, var_pts)
 spatial_methods = {"rod": pybamm.FiniteVolume()}
 disc = pybamm.Discretisation(mesh, spatial_methods)
 
 disc.process_model(model)
 
-answers, ws, timer = EIS(model, 1, 1000, 100, method = 'prebicgstab')
+import matplotlib.pyplot as plt
+
+answers, ws, timer = EIS(model, 0, 0, 1, method = 'thomas')
+nyquist_plot(answers)              
+
+##SOLVE in time domain
 # Choose solver
+'''
 solver = pybamm.ScipySolver()
 
 # Example: simulate for 10/omega seconds
@@ -87,3 +93,4 @@ pybamm.dynamic_plot(solution, ["Concentration", "Surface concentration", "Applie
 
 t = solution["Time"].entries  # array of size `Nt`
 c = solution["Concentration"].entries  # array of size `Nx` by `Nt`
+'''

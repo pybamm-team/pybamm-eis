@@ -155,6 +155,7 @@ def thomasMethod(diag1, diag2, diag3, b):
     #diag2 and b must have 1 more entry than 1 and 3
     #diag2 cannot have any zeros
     #b is zeros followed by an entry
+    
     n = len(diag1)
     for i in range(n):
         diag2[i+1] -= diag3[i]*diag1[i]/diag2[i]

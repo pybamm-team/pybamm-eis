@@ -22,7 +22,7 @@ def EIS(model, start_freq, end_freq, num_points, method = 'auto'):
     
     b = model.rhs_algebraic_eval(0, y0, [])
     M = model.mass_matrix.entries
-    
+
     #A = iwM - J, Ac = b
     
     start_timer = time.time()
@@ -141,9 +141,7 @@ def thomas_method(M, J, b, start_freq, end_freq, num_points, k=0):
     if k == 1:
         M_diags, J_diags = get_diagonals(M, J)
     else:
-        M_diags, J_diags = get_block_diagonals(M, J, k)
-        
-        
+        M_diags, J_diags = get_block_diagonals(M, J, k)   
     for w in ws:
         A_diag = []
         for i, B in enumerate(J_diags[1]):
@@ -153,7 +151,6 @@ def thomas_method(M, J, b, start_freq, end_freq, num_points, k=0):
         else:
             ans = nm.thomasBlockMethod(J_diags[0], A_diag, J_diags[2], b)
         answers.append(ans)
-        ws.append(w)
     
     return answers, ws
             
@@ -200,9 +197,9 @@ def get_diagonals(M, J):
         diag1.append(J[i, i+1])
         diag2.append(J[i, i])
         diag3.append(J[i+1, i])
-        M_diag.append(J[i, i])
+        M_diag.append(M[i, i])
     diag2.append(J[n-1, n-1])
-    M_diag.append(J[n-1, n-1])
+    M_diag.append(M[n-1, n-1])
     J_diags = (diag1, diag2, diag3)
     return M_diag, J_diags
 
@@ -215,8 +212,5 @@ def nyquist_plot(points):
     plt.scatter(x, y)
     plt.ylabel("-Imaginary")
     plt.xlabel("Real")
-    plt.show()                 
-                        
-                        
-                
+    plt.show()
             
