@@ -73,8 +73,6 @@ disc = pybamm.Discretisation(mesh, spatial_methods)
 
 disc.process_model(model)
 
-import matplotlib.pyplot as plt
-
 answers, ws, timer = EIS(model, 0, 0, 1, method = 'thomas')
 nyquist_plot(answers)              
 
