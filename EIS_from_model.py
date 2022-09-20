@@ -9,6 +9,7 @@ import numerical_methods as nm
 import numpy as np
 import time
 import scipy.sparse
+import matplotlib.pyplot as plt
 
 def EIS(model, start_freq, end_freq, num_points, method = 'auto'):
     #model should be a pybamm object
@@ -205,7 +206,16 @@ def get_diagonals(M, J):
     J_diags = (diag1, diag2, diag3)
     return M_diag, J_diags
 
-                    
+def nyquist_plot(points):
+    # make a plot
+    x = [point.real for point in points]
+    y = [-point.imag for point in points]
+
+    # plot the numbers
+    plt.scatter(x, y)
+    plt.ylabel("-Imaginary")
+    plt.xlabel("Real")
+    plt.show()                 
                         
                         
                 
