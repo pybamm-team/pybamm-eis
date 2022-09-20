@@ -68,24 +68,23 @@ def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
     
     pk = np.zeros(np.shape(b))
     vk = pk
-    
-    max_num_iter = 2*len(b)
+    max_num_iter = 2*np.shape(b)[0]
     
     for k in range(1, max_num_iter+1):
         rhok1 = rhok
-        rhok = np.dot(r0, rk)
+        rhok = np.dot(np.conj(r0.T), rk)
         beta_k = (rhok/rhok1)*(alpha_k/wk)
         
         pk = rk + beta_k*(pk - wk*vk)
         vk = A@pk
         
-        alpha_k = rhok/np.dot(r0, vk)
+        alpha_k = rhok/np.dot(np.conj(r0.T), vk)
         h = xk + alpha_k*pk
         
         s = rk - alpha_k*vk
         t = A@s
         
-        wk = np.dot(np.conj(t), s)/np.dot(np.conj(t), t)
+        wk = np.dot(np.conj(t.T), s)/np.dot(np.conj(t.T), t)
         xk1 = xk
         xk = h + wk*s
         callback(xk)
@@ -113,12 +112,12 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty):
     pk = np.zeros(np.shape(b))
     vk = pk
     
-    max_num_iter = 10*len(b)
+    max_num_iter = 2*np.shape(b)[0]
     tol = 10**-5
     
     for k in range(1, max_num_iter+1):
         rhok1 = rhok
-        rhok = np.dot(r0, rk)
+        rhok = np.dot(np.conj(r0.T), rk)
         beta_k = (rhok/rhok1)*(alpha_k/wk)
         
         pk = rk + beta_k*(pk - wk*vk)
@@ -128,7 +127,7 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty):
         
         vk = A@y
         
-        alpha_k = rhok/np.dot(r0, vk)
+        alpha_k = rhok/np.dot(np.conj(r0.T), vk)
         
         h = xk + alpha_k * y
 
@@ -139,7 +138,7 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty):
         
         t = A@z
         
-        wk = np.dot(np.conj(t), s)/np.dot(np.conj(t), t)
+        wk = np.dot(np.conj(t.T), s)/np.dot(np.conj(t.T), t)
         
         xk1 = xk
         xk = h + wk*z
@@ -156,11 +155,10 @@ def thomasMethod(diag1, diag2, diag3, b):
     #diag2 and b must have 1 more entry than 1 and 3
     #diag2 cannot have any zeros
     #b is zeros followed by an entry
-    
     n = len(diag1)
     for i in range(n):
         diag2[i+1] -= diag3[i]*diag1[i]/diag2[i]
-    ans = b[n]/diag2[n]
+    ans = complex(b[n])/diag2[n]
     return ans
 
 def thomasBlockMethod(diag1, diag2, diag3, b):
@@ -204,24 +202,23 @@ def ILUpreconditioner(diag1, diag2, diag3):
             Ss.append(Si)
             Ts.append(Ti)
         else:
-            L = np.linalg.solve(current[2], current[3])
-            H = current[1]@L
+            M = np.linalg.solve(current[2], current[3])
+            H = current[1]@M
             G = np.linalg.solve(current[0], H)
             F = np.eye(k) + 2*G
             Si = current[0]@np.linalg.inv(F)
             Ss.append(Si)
             
-            if i != m+1:
+            if i != m:
                 Ti = np.linalg.solve(Si, current[4])
                 Ts.append(Ti)
                 prev = current
-            
-    
+
     L = scipy.sparse.bmat([[Ss[i] if i == j else diag1[j] if i-j==1
                 else None for i in range(m)]
-                for j in range(m)], format='csr')
+                for j in range(m)], format='csr').A
     U = scipy.sparse.bmat([[np.eye(k) if i == j else Ts[i] if i-j==-1
             else None for i in range(m)]
-            for j in range(m)], format='csr')
+            for j in range(m)], format='csr').A
     
     return L, U
