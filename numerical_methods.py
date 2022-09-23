@@ -12,6 +12,30 @@ def empty(xk):
     pass
 
 def conjugate_gradient(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
+    '''
+    conjugate_gradient(A, b, start_point = 'zero', callback = empty, tol = 10**-5)
+    
+    Uses the conjugate gradient method to solve Ax = b
+    
+    Parameters
+    ----------
+    A : scipy sparse csr matrix
+        A square matrix.
+    b : numpy 1xn array
+    start_point : numpy 1xn array, optional
+        Where the iteration starts. The default is 'zero'.
+    callback : function, optional
+        a function callback(xk) that can be written to happen each iteration.
+        The default is empty.
+    tol : float, optional
+        A tolerance at which to stop the iteration. The default is 10**-5.
+
+    Returns
+    -------
+    xk : numpy 1xn array
+        The solution to Ax = b.
+
+    '''
     #Uses conjugate gradient algorithm
     #Should not be used unless A Hermitian. If A not hermitian, use BicgSTAB instead.
     #For best performance A should be a scipy csr sparse matrix
@@ -52,16 +76,40 @@ def conjugate_gradient(A, b, start_point = 'zero', callback = empty, tol = 10**-
     return xk
 
 
-def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
-    #Uses BicgSTAB algorithm with no preconditioner
-    #For best performance A should be a scipy csr sparse matrix
+def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):    
+    '''
+    bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5)
+    
+    Uses the BicgSTAB method to solve Ax = b
+    
+    Parameters
+    ----------
+    A : scipy sparse csr matrix
+        A square matrix.
+    b : numpy 1xn array
+    start_point : numpy 1xn array, optional
+        Where the iteration starts. The default is 'zero'.
+    callback : function, optional
+        a function callback(xk) that can be written to happen each iteration.
+        The default is empty.
+    tol : float, optional
+        A tolerance at which to stop the iteration. The default is 10**-5.
+
+    Returns
+    -------
+    xk : numpy 1xn array
+        The solution to Ax = b.
+
+    '''
     
     if str(start_point) == 'zero':
         start_point = np.zeros(np.shape(b))
-        
+    
+    
     xk = np.array(start_point)
     rk = np.array(b) - A@xk
     r0 = np.conj(rk)
+    
     rhok = 1
     alpha_k = 1
     wk = 1
@@ -95,16 +143,44 @@ def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
     return xk
 
 def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty):
-    #Uses preconditioned bicgstab
-    #the preconditioner is in the form K = LU where K is approximately A
-    #For best performance A should be a scipy csr sparse matrix
+    '''
+    prebicgstab(A, b, L, U, start_point = 'zero', callback = empty)
+    
+    Uses the preconditioned BicgSTAB method to solve Ax = b. The preconditioner
+    is of the form LU.
+    
+    Parameters
+    ----------
+    A : scipy sparse csr matrix
+        A square matrix.
+    b : numpy 1xn array
+    L : scipy sparse csr matrix
+        A lower (block) triangular matrix
+    U : scipy sparse crs matrix
+        An Upper (block) triangular matrix
+    start_point : numpy 1xn array, optional
+        Where the iteration starts. The default is 'zero'.
+    callback : function, optional
+        a function callback(xk) that can be written to happen each iteration.
+        The default is empty.
+    tol : float, optional
+        A tolerance at which to stop the iteration. The default is 10**-5.
+
+    Returns
+    -------
+    xk : numpy 1xn array
+        The solution to Ax = b.
+
+    '''
+    size = np.shape(b)
     
     if str(start_point) == 'zero':
-        start_point = np.zeros(np.shape(b))
+        start_point = np.zeros(size)
         
     xk = np.array(start_point)
     rk = np.array(b) - A@xk
     r0 = np.conj(rk)
+    
     rhok = 1
     alpha_k = 1
     wk = 1
@@ -119,27 +195,24 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty):
         rhok1 = rhok
         rhok = np.dot(np.conj(r0.T), rk)
         beta_k = (rhok/rhok1)*(alpha_k/wk)
-        
         pk = rk + beta_k*(pk - wk*vk)
         
-        y = np.linalg.solve(L, pk)
-        y = np.linalg.solve(U, y)
+        y = scipy.sparse.linalg.spsolve(L, pk)
+        y = np.reshape(np.array(scipy.sparse.linalg.spsolve(U, y)), size)
         
         vk = A@y
-        
         alpha_k = rhok/np.dot(np.conj(r0.T), vk)
-        
-        h = xk + alpha_k * y
 
+        h = xk + alpha_k * y
         s = rk - alpha_k*vk
-        
-        z = np.linalg.solve(L, s)
-        z = np.linalg.solve(U, z)
+
+        z = scipy.sparse.linalg.spsolve(L, s)
+        z = np.resize(np.array(scipy.sparse.linalg.spsolve(U, z)), size)
         
         t = A@z
         
         wk = np.dot(np.conj(t.T), s)/np.dot(np.conj(t.T), t)
-        
+        s
         xk1 = xk
         xk = h + wk*z
         callback(xk)
@@ -150,11 +223,28 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty):
     return xk
 
 def thomasMethod(diag1, diag2, diag3, b):
-    #For tridiagonal matrices
-    #first convert the matrix into lists of the diagonals
-    #diag2 and b must have 1 more entry than 1 and 3
-    #diag2 cannot have any zeros
-    #b is zeros followed by an entry
+    '''
+    thomasMethod(diag1, diag2, diag3, b)
+    
+    Uses the Thomas method to solve Ax = b. A is tridiagonal.
+    
+    Parameters
+    ----------
+    diag1 : list
+        The lower diagonal of A.
+    diag2 : list
+        The main diagonal of A
+    diag3 : list
+        The upper diagonal of A
+    b : numpy 1xn array
+        Has only one non-zero entry and that is the last entry.
+
+    Returns
+    -------
+    ans : float
+        The last entry of the solution to Ax = b.
+
+    '''
     
     n = len(diag1)
     for i in range(n):
@@ -163,12 +253,28 @@ def thomasMethod(diag1, diag2, diag3, b):
     return ans
 
 def thomasBlockMethod(diag1, diag2, diag3, b):
-    #For block tridiagonal matrices
-    #first convert the matrix into lists of the diagonals (lists of matrices)
-    #similar to previous but lists contain square matrices of equal size
-    #diag2 and b must have 1 more entry than 1 and 3
-    #diag2 cannot have any non-invertible matrices
-    #b is zeros followed by k entries, k is block size
+    '''
+    thomasBlockMethod(diag1, diag2, diag3, b)
+    
+    Uses the Thomas method to solve Ax = b. A is block tridiagonal.
+    
+    Parameters
+    ----------
+    diag1 : list of matrices
+        The lower diagonal of A.
+    diag2 : list of matrices
+        The main diagonal of A
+    diag3 : list of matrices
+        The upper diagonal of A
+    b : numpy 1xn array
+        Has only non-zero entries alligning with the last block.
+
+    Returns
+    -------
+    ans : float
+        The last entry of the solution to Ax = b.
+
+    '''
     m = len(diag1)
     for i in range(m):
         Q = np.linalg.solve(diag2[i], diag3[i])
@@ -183,10 +289,30 @@ def thomasBlockMethod(diag1, diag2, diag3, b):
     return ans
 
 def ILUpreconditioner(diag1, diag2, diag3):
-    #For block tridiagonal matrices
-    #first convert the matrix into lists of the diagonals (lists of matrices)
-    #diag2 and b must have 1 more entry than 1 and 3
-    #diag2 cannot have any non-invertible matrices
+    '''
+    ILUpreconditioner(diag1, diag2, diag3)
+    
+    Creates an ILU preconditioner for A. A is block tridiagonal.
+    
+    Parameters
+    ----------
+    diag1 : list of matrices
+        The lower diagonal of A.
+    diag2 : list of matrices
+        The main diagonal of A
+    diag3 : list of matrices
+        The upper diagonal of A
+
+    Returns
+    -------
+    L : scipy sparse csr matrix
+        A lower triangular matrix 
+    U : scipy sparse csr matrix
+        An upper triangular matrix 
+        
+        We have A equals approximately LU
+
+    '''
     m = len(diag2)
     
     k = np.shape(diag1[0])[0]
@@ -217,9 +343,9 @@ def ILUpreconditioner(diag1, diag2, diag3):
 
     L = scipy.sparse.bmat([[Ss[i] if i == j else diag1[j] if i-j==1
                 else None for i in range(m)]
-                for j in range(m)], format='csr').A
+                for j in range(m)], format='csr')
     U = scipy.sparse.bmat([[np.eye(k) if i == j else Ts[i] if i-j==-1
             else None for i in range(m)]
-            for j in range(m)], format='csr').A
+            for j in range(m)], format='csr')
     
     return L, U

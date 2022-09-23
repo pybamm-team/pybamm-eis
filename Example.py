@@ -73,7 +73,7 @@ disc = pybamm.Discretisation(mesh, spatial_methods)
 
 disc.process_model(model)
 
-answers, ws, timer = EIS(model, 1, 1000, 1000, method = 'thomas')
+answers, ws, timer = EIS(model, 1, 1000, 1000, method = 'bicgstab')
 nyquist_plot(answers)              
 
 ##SOLVE in time domain

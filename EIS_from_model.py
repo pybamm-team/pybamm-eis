@@ -12,7 +12,48 @@ import scipy.sparse
 import matplotlib.pyplot as plt
 
 def EIS(model, start_freq, end_freq, num_points, method = 'auto'):
-    #model should be a pybamm object
+    '''
+    EIS(model, start_freq, end_freq, num_points, method = 'auto')
+    
+    calculates impedence for a range of frequencies
+
+    Parameters
+    ----------
+    model : Pybamm model object
+        First set this up using Pybamm.
+    start_freq : float
+        The initial frequency in a frequency range to be evaluated at.
+    end_freq : float
+        The final frequency in a frequency range to be evaluated at.
+    num_points : int
+        the minimum number of frequencies impedence is calculated at over
+        the range.
+    method : string, optional
+        the numerical algorithm to use. Options are:
+        cg - conjugate gradient - only use for Hermitian matrices
+        thomas - only use for tridiagonal or block tridiagonal matrices where
+        each block is the same size.
+        bicgstab - use for matrices where no preconditioner is known
+        prebicgstab - use for matrices where a preconditioner is known - for
+        example near block tridiagonal matrices.
+        
+        The default is 'auto'.
+
+    Raises
+    ------
+    Exception
+        If invalid data is entered.
+
+    Returns
+    -------
+    answers : list
+        Complex values of impedence at each frequecy.
+    ws : list
+        Frequencies evaluated at.
+    time_taken : float
+        How long the calculation took.
+
+    '''
     
     solver = pybamm.ScipySolver()
     solver.set_up(model)
@@ -45,7 +86,41 @@ def EIS(model, start_freq, end_freq, num_points, method = 'auto'):
     
     return answers, ws, time_taken
 def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
+    '''
+    iterative_method(M, J, b, start_freq, end_freq, num_points, method)
     
+    calculates impedence for a range of frequencies using an iterative method
+
+    solves iwMc = Jc + b
+    
+    Parameters
+    ----------
+    M : sparse csr matrix
+    J : sparse csr matrix
+    b : numpy 1xn array
+    start_freq : float
+        The initial frequency in a frequency range to be evaluated at.
+    end_freq : float
+        The final frequency in a frequency range to be evaluated at.
+    num_points : int
+        the minimum number of frequencies impedence is calculated at over
+        the range.
+    method : string, optional
+        the numerical algorithm to use. Options are:
+        cg - conjugate gradient - only use for Hermitian matrices
+        bicgstab - use for matrices where no preconditioner is known
+        prebicgstab - use for matrices where a preconditioner is known - for
+        example near block tridiagonal matrices.
+
+    Returns
+    -------
+    answers : list
+        Complex values of impedence at each frequecy.
+    ws : list
+        Frequencies evaluated at.
+
+    '''
+
     # gives answers for a list of frequencies
     answers = []
     ws = []
@@ -60,16 +135,17 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
             A_diag.append(1.j*start_freq*M_diags[i]-B)
         
         L, U = nm.ILUpreconditioner(J_diags[0], A_diag, J_diags[2])
-        start_point = np.linalg.solve(L, b)
-        start_point = np.linalg.solve(U, start_point)
+        start_point = scipy.sparse.linalg.spsolve(L, b)
+        start_point = np.array(scipy.sparse.linalg.spsolve(U, start_point))
+        start_point = np.reshape(start_point, np.shape(b))
     else:
         start_point = 'zero'
         
-    w_increment_max = (end_freq - start_freq) / num_points
-
+    w_log_increment_max = (np.log(end_freq) - np.log(start_freq)) / num_points
+    multiplier = np.exp(w_log_increment_max) - 1
     while w <= end_freq:
+        w_increment_max = w*multiplier
         A = 1.j*w*M - J
-
         num_iters = 0
         stored_vals = []
         ns = []
@@ -128,15 +204,46 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
     return answers, ws
 
 def thomas_method(M, J, b, start_freq, end_freq, num_points, k=0):
+    '''
+    thomas_method(M, J, b, start_freq, end_freq, num_points, k=0)
     
+    calculates impedence for a range of frequencies using the Thomas method
+
+    solves iwMc = Jc + b
+    
+    Parameters
+    ----------
+    M : sparse csr matrix
+        Must be block diagonal
+    J : sparse csr matrix
+        Must be block tridiagonal
+    b : numpy 1xn array
+    start_freq : float
+        The initial frequency in a frequency range to be evaluated at.
+    end_freq : float
+        The final frequency in a frequency range to be evaluated at.
+    num_points : int
+        the minimum number of frequencies impedence is calculated at over
+        the range.
+    k : int, optional
+        the size of the blocks in the matrices. If 0 entered this is calculated
+        automatically.
+
+    Returns
+    -------
+    answers : list
+        Complex values of impedence at each frequecy.
+    ws : list
+        Frequencies evaluated at.
+
+    '''
     if k == 0:
         k = get_k(M)
     
     answers = []
     
     
-    ws = np.linspace(start_freq, end_freq, num_points)
-        
+    ws = np.exp(np.linspace(np.log(start_freq), np.log(end_freq), num_points))
 
     if k == 1:
         M_diags, J_diags = get_diagonals(M, J)
@@ -156,6 +263,24 @@ def thomas_method(M, J, b, start_freq, end_freq, num_points, k=0):
             
         
 def get_k(M):
+    '''
+    get_k(M)
+    
+    gets the block size from a block diagonal matrix
+    
+    Parameters
+    ----------
+    
+    M : scipy sparse csr matrix 
+        Must be block diagonal.
+    
+    Returns
+    -------
+    
+    k : int
+        the block size
+    '''
+
     n = np.shape(M)[0]
     for i in range(np.shape(M)[0]):
         if M[i, 0] == 0:
@@ -171,6 +296,32 @@ def get_k(M):
                     break
     return k
 def get_block_diagonals(M, J, k):
+    '''
+    get_block_diagonals(M, J, k)
+    
+    converts a scipy sparse csr matrix to a block diagonal storage form
+    
+    Parameters
+    ----------
+    
+    M : scipy sparse csr matrix 
+        Must be block diagonal
+    J : scipy sparse csr matrix 
+        Must be block tridiagonal
+    k : int
+        is the block size
+    
+    Returns
+    -------
+    
+    M_diag : list
+        list of all the block matrices on the diagonal of M
+        
+    (diag1, diag2, diag3) : tuple
+        a tuple of lists of block matrices on the 3
+        diagonals of J. 1 is below the main diagonal, 2 is the main diagonal, 3
+        is above.
+    '''
     n = np.shape(M)[0]
     m = int(n/k)
     diag1 = []
@@ -187,6 +338,30 @@ def get_block_diagonals(M, J, k):
     return M_diag, (diag1, diag2, diag3)
 
 def get_diagonals(M, J):
+    '''
+    get_diagonals(M, J)
+    
+    converts a scipy sparse csr matrix to a diagonal storage form
+    
+    Parameters
+    ----------
+    
+    M : scipy sparse csr matrix 
+        Must be diagonal
+    J : scipy sparse csr matrix 
+        Must be tridiagonal
+    
+    Returns
+    -------
+    
+    M_diag : list
+        list of all the entries (floats) on the diagonal of M
+        
+    J_diags = (diag1, diag2, diag3) : tuple
+        a tuple of lists of entries (floats) on the 3
+        diagonals of J. 1 is below the main diagonal, 2 is the 
+        main diagonal, 3 is above.
+    '''
     #for k = 1 only
     n = np.shape(M)[0]
     diag1 = []
@@ -204,6 +379,17 @@ def get_diagonals(M, J):
     return M_diag, J_diags
 
 def nyquist_plot(points):
+    '''
+    nyquist_plot(points)
+    
+    makes a nyquist plot from EIS data
+    
+    Parameters
+    ----------
+    
+    points: list
+        list of complex numbers to be plotted
+    '''
     # make a plot
     x = [point.real for point in points]
     y = [-point.imag for point in points]
