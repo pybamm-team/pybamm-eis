@@ -134,7 +134,9 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
         for i, B in enumerate(J_diags[1]):
             A_diag.append(1.j*start_freq*M_diags[i]-B)
         
-        L, U = nm.ILUpreconditioner(J_diags[0], A_diag, J_diags[2])
+        #L, U = nm.ILUpreconditioner(J_diags[0], A_diag, J_diags[2])
+        L = scipy.sparse.eye(np.shape(b)[0])
+        U = scipy.sparse.eye(np.shape(b)[0])
         start_point = scipy.sparse.linalg.spsolve(L, b)
         start_point = np.array(scipy.sparse.linalg.spsolve(U, start_point))
         start_point = np.reshape(start_point, np.shape(b))
@@ -162,7 +164,7 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
             c = nm.prebicgstab(A, b, L, U, start_point=start_point, callback=callback)
         else:
             c = nm.conjugate_gradient(A, b, start_point=start_point, callback=callback)
-            
+        #print(num_iters)    
         ans = c[-1][0]
         
         answers.append(ans)
@@ -195,7 +197,8 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
             old_increment = float(w_increment)
             start_point = c + w_increment/old_increment * (c - old_c)
 
-        
+        #if w_increment == w_increment_max:
+            #print("MAX")
 
 
         ws.append(w)
@@ -244,7 +247,7 @@ def thomas_method(M, J, b, start_freq, end_freq, num_points, k=0):
     
     
     ws = np.exp(np.linspace(np.log(start_freq), np.log(end_freq), num_points))
-
+    '''
     if k == 1:
         M_diags, J_diags = get_diagonals(M, J)
     else:
@@ -257,6 +260,11 @@ def thomas_method(M, J, b, start_freq, end_freq, num_points, k=0):
             ans = nm.thomasMethod(J_diags[0], A_diag, J_diags[2], b)
         else:
             ans = nm.thomasBlockMethod(J_diags[0], A_diag, J_diags[2], b)
+        answers.append(ans)
+    '''
+    for w in ws:
+        A = 1.j*w*M - J
+        ans = scipy.sparse.linalg.spsolve(A, b)[-1]
         answers.append(ans)
     
     return answers, ws

@@ -136,13 +136,13 @@ def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
         xk1 = xk
         xk = h + wk*s
         callback(xk)
-        if np.abs(xk[-1] - xk1[-1]) < tol:
+        if np.linalg.norm(xk - xk1, 1) < tol:
             break
         else:
             rk = s - wk*t  
     return xk
 
-def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty):
+def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty, tol = 10**-5):
     '''
     prebicgstab(A, b, L, U, start_point = 'zero', callback = empty)
     
@@ -189,7 +189,7 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty):
     vk = pk
     
     max_num_iter = 2*np.shape(b)[0]
-    tol = 10**-5
+    
     
     for k in range(1, max_num_iter+1):
         rhok1 = rhok
@@ -212,7 +212,6 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty):
         t = A@z
         
         wk = np.dot(np.conj(t.T), s)/np.dot(np.conj(t.T), t)
-        s
         xk1 = xk
         xk = h + wk*z
         callback(xk)
