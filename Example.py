@@ -74,10 +74,27 @@ disc = pybamm.Discretisation(mesh, spatial_methods)
 
 disc.process_model(model)
 
-answers, ws, timer = EIS(model, 1, 1000, 100, method = 'bicgstab')
+answers, ws, timer = EIS(model, 5, 5, 1, method = 'thomas')
 nyquist_plot(answers)              
 print(timer)
 ##SOLVE in time domain
 # Choose solver
+solver = pybamm.ScipySolver()
+
+# Example: simulate for 10/omega seconds
+simulation_time = 10/omega  # end time in seconds
+npts = int(60 * simulation_time * omega)  # need enough timesteps to resolve output
+t_eval = np.linspace(0, simulation_time, npts)
+solution = solver.solve(model, t_eval)
 
 
+pybamm.dynamic_plot(solution, ["Concentration", "Surface concentration", "Applied flux"])
+
+t = solution["Time"].entries  # array of size `Nt`
+c = solution["Surface concentration"].entries  # array of size `Nx` by `Nt`
+
+#Fouries transform skipping the first 50 entries
+c_hat = scipy.fft.fft(c[50:])
+#??
+print(answers)
+print(c_hat)
