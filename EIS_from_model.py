@@ -146,7 +146,7 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
     w_log_increment_max = (np.log(end_freq) - np.log(start_freq)) / num_points
     multiplier = np.exp(w_log_increment_max) - 1
     while w <= end_freq:
-        print(w)
+        #print(w)
         w_increment_max = w*multiplier
         A = 1.j*w*M - J
         num_iters = 0
@@ -198,11 +198,11 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
             else:                
                 w_increment = min((end_freq*ns[ys.index(y_min)]/y_min)[0], w_increment_max)
                 
-            print(y_min)
+            #print(y_min)
             start_point = c + w_increment/old_increment * (c - old_c)
 
-        if w_increment == w_increment_max:
-            print("MAX")
+        #if w_increment == w_increment_max:
+        #    print("MAX")
 
 
         ws.append(w)
