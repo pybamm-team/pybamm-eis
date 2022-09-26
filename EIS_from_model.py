@@ -146,6 +146,7 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
     w_log_increment_max = (np.log(end_freq) - np.log(start_freq)) / num_points
     multiplier = np.exp(w_log_increment_max) - 1
     while w <= end_freq:
+        print(w)
         w_increment_max = w*multiplier
         A = 1.j*w*M - J
         num_iters = 0
@@ -170,6 +171,7 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
         answers.append(ans)
         
         es = np.abs(np.array(stored_vals) - ans)
+            
         ns = num_iters+1 - np.array(ns)
         
         old_c = np.array(c)
@@ -177,28 +179,30 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
             w_increment = float(w_increment_max)
             start_point = c
         else:
-            kappa = (np.abs(ans - start_point[-1]))/w_increment**2
+            old_increment = float(w_increment)
+            kappa = np.abs(ans - start_point[-1])/(w_increment/end_freq)**2
             ys = []
             for j, e in enumerate(es):
-                y = 2*ns[j]/(-w_increment+np.sqrt(w_increment**2+4*(e+0.001)/kappa))
+                y = 2*ns[j]/(-w_increment/end_freq+np.sqrt((w_increment/end_freq)**2+4*(e+0.1)/kappa))
                 ys.append(y)
             y_min = min(ys)
-            
+            #print(ys)
+            #print(ns)
+            #plt.scatter(ns, es)
+            #plt.show()
+            #plt.scatter(ns, ys)
+            #plt.show()
             if ys[-1] == y_min:
-                try:
-                    y_min = max(2*y_min - ys[-2], [0.01])
-                except IndexError:
-                    pass
-                n_val = ns[-1] + 5
-                w_increment = min((n_val/y_min)[0], w_increment_max)
+                n_val = ns[-1]+5
+                w_increment = min((end_freq*n_val/y_min)[0], w_increment_max)
             else:                
-                w_increment = min((ns[ys.index(y_min)]/y_min)[0], w_increment_max)
+                w_increment = min((end_freq*ns[ys.index(y_min)]/y_min)[0], w_increment_max)
                 
-            old_increment = float(w_increment)
+            print(y_min)
             start_point = c + w_increment/old_increment * (c - old_c)
 
-        #if w_increment == w_increment_max:
-            #print("MAX")
+        if w_increment == w_increment_max:
+            print("MAX")
 
 
         ws.append(w)
@@ -407,4 +411,3 @@ def nyquist_plot(points):
     plt.ylabel("-Imaginary")
     plt.xlabel("Real")
     plt.show()
-            
