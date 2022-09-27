@@ -134,9 +134,9 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
         for i, B in enumerate(J_diags[1]):
             A_diag.append(1.j*start_freq*M_diags[i]-B)
         
-        #L, U = nm.ILUpreconditioner(J_diags[0], A_diag, J_diags[2])
-        L = scipy.sparse.eye(np.shape(b)[0])
-        U = scipy.sparse.eye(np.shape(b)[0])
+        L, U = nm.ILUpreconditioner(J_diags[0], A_diag, J_diags[2])
+        #L = scipy.sparse.eye(np.shape(b)[0])
+        #U = scipy.sparse.eye(np.shape(b)[0])
         start_point = scipy.sparse.linalg.spsolve(L, b)
         start_point = np.array(scipy.sparse.linalg.spsolve(U, start_point))
         start_point = np.reshape(start_point, np.shape(b))

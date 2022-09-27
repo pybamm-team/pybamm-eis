@@ -67,15 +67,15 @@ param.process_model(model)
 param.process_geometry(geometry)
 
 submesh_types = {"rod": pybamm.Uniform1DSubMesh}
-var_pts = {x: 100}
+var_pts = {x: 30}
 mesh = pybamm.Mesh(geometry, submesh_types, var_pts)
 spatial_methods = {"rod": pybamm.FiniteVolume()}
 disc = pybamm.Discretisation(mesh, spatial_methods)
 
 disc.process_model(model)
 
-answers, ws, timer = EIS(model, 1, 1000, 50, method = 'bicgstab')
-nyquist_plot(answers)              
+answers, ws, timer = EIS(model, 1, 1000, 10, method = 'prebicgstab')
+nyquist_plot(answers)
 print(timer)
 ##SOLVE in time domain
 # Choose solver

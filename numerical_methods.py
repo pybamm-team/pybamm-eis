@@ -215,7 +215,7 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty, tol = 10**-5
         xk1 = xk
         xk = h + wk*z
         callback(xk)
-        if np.abs(xk[-1] - xk1[-1]) < tol:
+        if np.linalg.norm(xk - xk1, 1) < tol:
             break
         else:
             rk = s - wk*t  
@@ -341,10 +341,10 @@ def ILUpreconditioner(diag1, diag2, diag3):
                 prev = current
 
     L = scipy.sparse.bmat([[Ss[i] if i == j else diag1[j] if i-j==1
-                else None for i in range(m)]
-                for j in range(m)], format='csr')
+                else None for j in range(m)]
+                for i in range(m)], format='csr')
     U = scipy.sparse.bmat([[np.eye(k) if i == j else Ts[i] if i-j==-1
-            else None for i in range(m)]
-            for j in range(m)], format='csr')
+            else None for j in range(m)]
+            for i in range(m)], format='csr')
     
     return L, U
