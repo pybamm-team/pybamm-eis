@@ -11,7 +11,8 @@ import time
 import scipy.sparse
 import matplotlib.pyplot as plt
 
-def EIS(model, start_freq, end_freq, num_points, method = 'auto'):
+def EIS(M, J, b, start_freq, end_freq, num_points, method = 'auto'):
+    #redo this
     '''
     EIS(model, start_freq, end_freq, num_points, method = 'auto')
     
@@ -54,15 +55,6 @@ def EIS(model, start_freq, end_freq, num_points, method = 'auto'):
         How long the calculation took.
 
     '''
-    
-    solver = pybamm.ScipySolver()
-    solver.set_up(model)
-    
-    y0 = model.concatenated_initial_conditions.entries  # vector of initial conditions
-    J = model.jac_rhs_algebraic_eval(0, y0, []).sparse()  #  call the Jacobian and return a (sparse) matrix
-    
-    b = model.rhs_algebraic_eval(0, y0, [])
-    M = model.mass_matrix.entries
 
     #A = iwM - J, Ac = b
     

@@ -109,7 +109,6 @@ def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
     xk = np.array(start_point)
     rk = np.array(b) - A@xk
     r0 = np.conj(rk)
-    
     rhok = 1
     alpha_k = 1
     wk = 1
@@ -120,14 +119,20 @@ def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
     
     for k in range(1, max_num_iter+1):
         rhok1 = rhok
-        rhok = np.dot(np.conj(r0.T), rk)
+        rhok = np.dot(r0.T, rk)
         beta_k = (rhok/rhok1)*(alpha_k/wk)
         
         pk = rk + beta_k*(pk - wk*vk)
         vk = A@pk
         
-        alpha_k = rhok/np.dot(np.conj(r0.T), vk)
+        alpha_k = rhok/np.dot(r0.T, vk)
+        
         h = xk + alpha_k*pk
+        
+        if np.linalg.norm(xk - h, 1) < tol:
+            xk = h
+            callback(xk)
+            break
         
         s = rk - alpha_k*vk
         t = A@s
@@ -193,7 +198,7 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty, tol = 10**-5
     
     for k in range(1, max_num_iter+1):
         rhok1 = rhok
-        rhok = np.dot(np.conj(r0.T), rk)
+        rhok = np.dot(r0.T, rk)
         beta_k = (rhok/rhok1)*(alpha_k/wk)
         pk = rk + beta_k*(pk - wk*vk)
         
@@ -201,9 +206,15 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty, tol = 10**-5
         y = np.reshape(np.array(scipy.sparse.linalg.spsolve(U, y)), size)
         
         vk = A@y
-        alpha_k = rhok/np.dot(np.conj(r0.T), vk)
+        alpha_k = rhok/np.dot(r0.T, vk)
 
         h = xk + alpha_k * y
+        
+        if np.linalg.norm(xk - h, 1) < tol:
+            xk = h
+            callback(xk)
+            break
+        
         s = rk - alpha_k*vk
 
         z = scipy.sparse.linalg.spsolve(L, s)
