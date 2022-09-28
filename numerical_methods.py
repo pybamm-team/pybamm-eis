@@ -217,12 +217,12 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty, tol = 10**-5
         
         s = rk - alpha_k*vk
 
-        z = scipy.sparse.linalg.spsolve(L, s)
-        z = np.resize(np.array(scipy.sparse.linalg.spsolve(U, z)), size)
+        Linvs = scipy.sparse.linalg.spsolve(L, s)
+        z = np.resize(np.array(scipy.sparse.linalg.spsolve(U, Linvs)), size)
         
         t = A@z
-        
-        wk = np.dot(np.conj(t.T), s)/np.dot(np.conj(t.T), t)
+        Linvt = scipy.sparse.linalg.spsolve(L, t)
+        wk = np.dot(np.conj(Linvt.T), Linvs)/np.dot(np.conj(Linvt.T), Linvt)
         xk1 = xk
         xk = h + wk*z
         callback(xk)

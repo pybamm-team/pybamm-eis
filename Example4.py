@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from EIS_from_model import EIS, nyquist_plot
 
-model = pybamm.lithium_ion.SPM()
+model = pybamm.lithium_ion.SPM() #DFN
 
 def set_up_model_for_eis(model, inplace=True):
     """
@@ -105,10 +105,10 @@ parameter_values = pybamm.ParameterValues("Chen2020")
 parameter_values["Current function [A]"] = 2.5
 
 var_pts = {
-            "x_n": 5,
+            "x_n": 5, #negative electrode, normally all 30, max 100
             "x_s": 5,
             "x_p": 5,
-            "r_n": 5,
+            "r_n": 5,  #each particle
             "r_p": 5,
 }
 
@@ -147,7 +147,11 @@ b = np.zeros(y0.shape[0])
 b[-1] = -1
 
 M = model.mass_matrix.entries
-answers, ws, timer = EIS(M, J, b, 1, 1000, 100, method = 'bicgstab')
+import scipy.sparse
+A = 1j * 5 * M - J
+diag = scipy.sparse.csr_matrix.diagonal(A)
+print(diag)
+answers, ws, timer = EIS(M, J, b, 1, 1000, 100, method = 'thomas')
 nyquist_plot(answers)
 print(timer)
 

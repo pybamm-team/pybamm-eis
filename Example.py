@@ -83,7 +83,7 @@ J = model.jac_rhs_algebraic_eval(0, y0, []).sparse()  #  call the Jacobian and r
 b = model.rhs_algebraic_eval(0, y0, [])
 M = model.mass_matrix.entries
 
-answers, ws, timer = EIS(M, J, b, 1, 1000, 5, method = 'bicgstab')
+answers, ws, timer = EIS(M, J, b, 1, 1000, 10, method = 'prebicgstab')
 nyquist_plot(answers)
 print(timer)
 ##SOLVE in time domain

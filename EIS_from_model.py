@@ -132,6 +132,7 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method):
         start_point = scipy.sparse.linalg.spsolve(L, b)
         start_point = np.array(scipy.sparse.linalg.spsolve(U, start_point))
         start_point = np.reshape(start_point, np.shape(b))
+        #start_point = 'zero'
     else:
         start_point = 'zero'
         
