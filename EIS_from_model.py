@@ -63,7 +63,7 @@ def EIS(model, start_freq, end_freq, num_points, method = 'auto'):
     
     b = model.rhs_algebraic_eval(0, y0, [])
     M = model.mass_matrix.entries
-
+    b[-1] = 5
     #A = iwM - J, Ac = b
     
     start_timer = time.time()
