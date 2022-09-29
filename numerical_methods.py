@@ -115,7 +115,7 @@ def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
     
     pk = np.zeros(np.shape(b))
     vk = pk
-    max_num_iter = 2*np.shape(b)[0]
+    max_num_iter = 40#2*np.shape(b)[0]
     
     for k in range(1, max_num_iter+1):
         rhok1 = rhok
@@ -128,11 +128,6 @@ def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
         alpha_k = rhok/np.dot(r0.T, vk)
         
         h = xk + alpha_k*pk
-        
-        if np.linalg.norm(xk - h, 1) < tol:
-            xk = h
-            callback(xk)
-            break
         
         s = rk - alpha_k*vk
         t = A@s
@@ -147,12 +142,12 @@ def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
             rk = s - wk*t  
     return xk
 
-def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty, tol = 10**-5):
+def prebicgstab(A, b, L, U = 'none', start_point = 'zero', callback = empty, tol = 10**-5):
     '''
     prebicgstab(A, b, L, U, start_point = 'zero', callback = empty)
     
     Uses the preconditioned BicgSTAB method to solve Ax = b. The preconditioner
-    is of the form LU.
+    is of the form LU, or just of the form L.
     
     Parameters
     ----------
@@ -161,8 +156,10 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty, tol = 10**-5
     b : numpy 1xn array
     L : scipy sparse csr matrix
         A lower (block) triangular matrix
-    U : scipy sparse crs matrix
-        An Upper (block) triangular matrix
+    U : scipy sparse crs matrix, optional
+        An Upper (block) triangular matrix. None used if not given.
+    triangular: Specifies if the 2 above matrices are triangular. Note longer
+    time will be taken if non-triangular.
     start_point : numpy 1xn array, optional
         Where the iteration starts. The default is 'zero'.
     callback : function, optional
@@ -193,36 +190,41 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty, tol = 10**-5
     pk = np.zeros(np.shape(b))
     vk = pk
     
-    max_num_iter = 2*np.shape(b)[0]
+    max_num_iter = 40#2*np.shape(b)[0]
     
-    
+    if type(U) != str:
+        U_exists = True
+    else:
+        U_exists = False
+        
     for k in range(1, max_num_iter+1):
         rhok1 = rhok
         rhok = np.dot(r0.T, rk)
         beta_k = (rhok/rhok1)*(alpha_k/wk)
         pk = rk + beta_k*(pk - wk*vk)
-        
+
         y = scipy.sparse.linalg.spsolve(L, pk)
-        y = np.reshape(np.array(scipy.sparse.linalg.spsolve(U, y)), size)
+        if U_exists:
+            y = np.array(scipy.sparse.linalg.spsolve(U, y))
+        
+        y = np.reshape(y, size)
         
         vk = A@y
         alpha_k = rhok/np.dot(r0.T, vk)
 
         h = xk + alpha_k * y
         
-        if np.linalg.norm(xk - h, 1) < tol:
-            xk = h
-            callback(xk)
-            break
-        
-        s = rk - alpha_k*vk
+        s = rk - alpha_k*vk    
 
-        Linvs = scipy.sparse.linalg.spsolve(L, s)
-        z = np.resize(np.array(scipy.sparse.linalg.spsolve(U, Linvs)), size)
+        z = scipy.sparse.linalg.spsolve(L, s)
+        if U_exists:
+            z = np.array(scipy.sparse.linalg.spsolve(U, z))
+                
+        z = np.reshape(z, size)
         
         t = A@z
-        Linvt = scipy.sparse.linalg.spsolve(L, t)
-        wk = np.dot(np.conj(Linvt.T), Linvs)/np.dot(np.conj(Linvt.T), Linvt)
+        
+        wk = np.dot(np.conj(t.T), s)/np.dot(np.conj(t.T), t)
         xk1 = xk
         xk = h + wk*z
         callback(xk)
@@ -232,71 +234,6 @@ def prebicgstab(A, b, L, U, start_point = 'zero', callback = empty, tol = 10**-5
             rk = s - wk*t  
     return xk
 
-def thomasMethod(diag1, diag2, diag3, b):
-    '''
-    thomasMethod(diag1, diag2, diag3, b)
-    
-    Uses the Thomas method to solve Ax = b. A is tridiagonal.
-    
-    Parameters
-    ----------
-    diag1 : list
-        The lower diagonal of A.
-    diag2 : list
-        The main diagonal of A
-    diag3 : list
-        The upper diagonal of A
-    b : numpy 1xn array
-        Has only one non-zero entry and that is the last entry.
-
-    Returns
-    -------
-    ans : float
-        The last entry of the solution to Ax = b.
-
-    '''
-    
-    n = len(diag1)
-    for i in range(n):
-        diag2[i+1] -= diag3[i]*diag1[i]/diag2[i]
-    ans = complex(b[n])/diag2[n]
-    return ans
-
-def thomasBlockMethod(diag1, diag2, diag3, b):
-    '''
-    thomasBlockMethod(diag1, diag2, diag3, b)
-    
-    Uses the Thomas method to solve Ax = b. A is block tridiagonal.
-    
-    Parameters
-    ----------
-    diag1 : list of matrices
-        The lower diagonal of A.
-    diag2 : list of matrices
-        The main diagonal of A
-    diag3 : list of matrices
-        The upper diagonal of A
-    b : numpy 1xn array
-        Has only non-zero entries alligning with the last block.
-
-    Returns
-    -------
-    ans : float
-        The last entry of the solution to Ax = b.
-
-    '''
-    m = len(diag1)
-    for i in range(m):
-        Q = np.linalg.solve(diag2[i], diag3[i])
-        diag2[i+1] -= diag1[i]@Q
-    
-    Bm = diag2[m]
-    k = np.shape(Bm)[0]
-    y = b[-k:]
-    
-    ans = np.linalg.solve(Bm, y)[-1]
-    
-    return ans
 
 def ILUpreconditioner(diag1, diag2, diag3):
     '''

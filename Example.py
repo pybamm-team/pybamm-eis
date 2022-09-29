@@ -13,51 +13,36 @@ import scipy.fft
 model = pybamm.BaseModel()
 
 x = pybamm.SpatialVariable("x", domain="rod", coord_sys="cartesian")
-c = pybamm.Variable("Concentration", domain="rod")
+c_hat = pybamm.Variable("Concentration (FT)", domain="rod")
 D = pybamm.Parameter("Diffusivity")
 c0 = pybamm.Parameter("Initial concentration")
 
-j = pybamm.FunctionParameter("Applied flux", {"Time": pybamm.t})
+j_hat = pybamm.Parameter("Applied flux (FT)")
 
-N = - D * pybamm.grad(c)  # The flux 
+N = - D * pybamm.grad(c_hat)  # The flux 
 dcdt = - pybamm.div(N)  # The right hand side of the PDE
-model.rhs = {c: dcdt}  # Add to model
+model.rhs = {c_hat: dcdt}  # Add to model
 
 model.boundary_conditions = {
-    c: {
+    c_hat: {
         "left": (pybamm.Scalar(0), "Neumann"),
-        "right": (-j / D, "Neumann"),
+        "right": (-j_hat / D, "Neumann"),
     }
 }
 
-model.initial_conditions = {c: c0}
+model.initial_conditions = {c_hat: c0}
 
 model.variables = {
-    "Concentration": c, 
-    "Surface concentration": pybamm.surf(c),
-    "Applied flux": j,
-    "Time": pybamm.t,
+    "Concentration (FT)": c_hat, 
+    "Applied flux (FT)": j_hat,
 }
 
 geometry = {"rod": {x: {"min": pybamm.Scalar(0), "max": pybamm.Scalar(1)}}}
 
-def applied_flux_function(A, omega):
-    "Flux must return a function of time only"
-    def applied_flux(t):
-        return A * pybamm.sin(2 * np.pi * omega * t)
-    
-    return applied_flux
-
-
-# Choose amplitude and frequency 
-A = 2
-omega = 5
-
 # Define parameter values object
 param = pybamm.ParameterValues(
     {
-        "Applied flux": applied_flux_function(A, omega),
-        "Applied flux": 1,
+        "Applied flux (FT)": 1,
         "Diffusivity": 1,
         "Initial concentration": 1,
     },
@@ -67,7 +52,7 @@ param.process_model(model)
 param.process_geometry(geometry)
 
 submesh_types = {"rod": pybamm.Uniform1DSubMesh}
-var_pts = {x: 30}
+var_pts = {x: 100}
 mesh = pybamm.Mesh(geometry, submesh_types, var_pts)
 spatial_methods = {"rod": pybamm.FiniteVolume()}
 disc = pybamm.Discretisation(mesh, spatial_methods)
@@ -83,10 +68,9 @@ J = model.jac_rhs_algebraic_eval(0, y0, []).sparse()  #  call the Jacobian and r
 b = model.rhs_algebraic_eval(0, y0, [])
 M = model.mass_matrix.entries
 
-answers, ws, timer = EIS(M, J, b, 1, 1000, 10, method = 'prebicgstab')
+answers, ws, timer = EIS(M, J, b, 1, 1000, 10, method = 'direct')
 nyquist_plot(answers)
 print(timer)
-##SOLVE in time domain
-# Choose solver
 
 
+#(-0.12602100399465593+0.12634292282544524j)
