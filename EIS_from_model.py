@@ -4,12 +4,16 @@ Created on Thu Sep 15 12:00:27 2022
 
 @author: rish3
 """
-import pybamm
+
 import numerical_methods as nm
 import numpy as np
 import time
 import scipy.sparse
 import matplotlib.pyplot as plt
+
+global start_point, st, LUt
+LUt = 1
+st = 0
 
 def EIS(M, J, b, start_freq, end_freq, num_points, method = 'auto'):
     #redo this
@@ -71,12 +75,10 @@ def EIS(M, J, b, start_freq, end_freq, num_points, method = 'auto'):
         Zs, ws = iterative_method(M, J, b, start_freq, end_freq, num_points, method)    
     elif method == "direct":
         Zs, ws = direct_method(M, J, b, start_freq, end_freq, num_points)
+    elif method == "semi-direct":
+        Zs, ws = semi_direct_method(M, J, b, start_freq, end_freq, num_points)
     elif method == "auto":
-        k = get_k(M)
-        if k >= 8:
-            Zs, ws = iterative_method(M, J, b, start_freq, end_freq, num_points, 'bicgstab')
-        else:
-            Zs, ws = direct_method(M, J, b, start_freq, end_freq, num_points, k=k)
+        Zs, ws = iterative_method(M, J, b, start_freq, end_freq, num_points, method, preconditioner = ELU)
     else:
         raise Exception("Not a valid method")
     
@@ -87,7 +89,7 @@ def EIS(M, J, b, start_freq, end_freq, num_points, method = 'auto'):
 
 
 
-def ILU(A, M, J, L, U):
+def ILU(A, M, J, L, U, b = None):
     if type(L) == str:
         k = get_k(M)
         M_diags, A_diags = get_block_diagonals(M, A, k)
@@ -95,12 +97,12 @@ def ILU(A, M, J, L, U):
         L, U = nm.ILUpreconditioner(A_diags[0], A_diags[1], A_diags[2])
     return L, U
 
-def G_S(A, M, J, L, U):
+def G_S(A, M, J, L, U, b = None):
     L = scipy.sparse.tril(A, format = 'csr')
     U = 'none'
     return L, U
 
-def G_S_V(A, M, J, L, U):
+def G_S_V(A, M, J, L, U, b = None):
     #Note L and U are reversed here because this is actually a UL factorisation.
     #This doesn't affect bicgstab.
     
@@ -109,7 +111,30 @@ def G_S_V(A, M, J, L, U):
     Id = scipy.sparse.eye(A.shape[0], dtype = 'complex', format = 'csr')
     L = L + Id
     return L, U
-def iterative_method(M, J, b, start_freq, end_freq, num_points, method, preconditioner = ILU):
+
+def ELU(A, M, J, L, U, b):
+    global start_point, st, LUt
+    
+    et = time.time()
+    
+    try:
+        t = et - st
+    except:
+        pass
+    
+    if type(L) == str or LUt <= t:
+        LUstart_time = time.time()
+        L = scipy.sparse.linalg.splu(A.tocsc())
+        start_point = L.solve(b)
+        U = 'none'
+        LUend_time = time.time()
+        LUt = LUend_time - LUstart_time
+    
+    st = time.time()
+        
+    return L, U
+
+def iterative_method(M, J, b, start_freq, end_freq, num_points, method, preconditioner = ELU):
     '''
     iterative_method(M, J, b, start_freq, end_freq, num_points, method)
     
@@ -162,18 +187,16 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method, precondi
     start_point = b
         
     w_log_increment_max = (np.log(end_freq) - np.log(start_freq)) / num_points
-    multiplier = np.exp(w_log_increment_max) - 1
     iters = []
     while w <= end_freq:
         #print(w)
-        w_increment_max = w*multiplier
         A = 1.j*w*M - J
         num_iters = 0
         stored_vals = []
         ns = []
         
         if method == 'prebicgstab':
-            L, U = preconditioner(A, M, J, L, U)
+            L, U = preconditioner(A, M, J, L, U, b)
 
         def callback(xk):
             nonlocal num_iters
@@ -201,14 +224,14 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method, precondi
         
         old_c = np.array(c)
         if len(Zs) == 1:
-            w_increment = float(w_increment_max)
+            w_log_increment = float(w_log_increment_max)
             start_point = c
         else:
-            old_increment = float(w_increment)
-            kappa = np.abs(V - start_point[-2])/(w_increment/end_freq)**2
+            old_increment = float(w_log_increment)
+            kappa = np.abs(V - start_point[-2])/w_log_increment**2
             ys = []
             for j, e in enumerate(es):
-                y = 2*ns[j]/(-w_increment/end_freq+np.sqrt((w_increment/end_freq)**2+4*(e+0.1)/kappa))
+                y = 2*ns[j]/(-w_log_increment+np.sqrt((w_log_increment)**2+4*(e+0.01)/kappa))
                 ys.append(y)
             y_min = min(ys)
             #print(ys)
@@ -219,20 +242,22 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method, precondi
             #plt.show()
             if ys[-1] == y_min:
                 n_val = ns[-1]+5
-                w_increment = min(end_freq*n_val/y_min[0], w_increment_max)
-            else:              
-                w_increment = min(end_freq*ns[ys.index(y_min)]/y_min[0], w_increment_max)
+                w_log_increment = min(n_val/y_min[0], w_log_increment_max)
+            else:
+                w_log_increment = min(ns[ys.index(y_min)]/y_min[0], w_log_increment_max)
                 
             #print(y_min)
-            start_point = c + w_increment/old_increment * (c - old_c)
-            
+            start_point = c + w_log_increment/old_increment * (c - old_c)
+        
+        multiplier = np.exp(w_log_increment)
         #if w_increment == w_increment_max:
         #    print("MAX")
 
 
         ws.append(w)
         iters.append(num_iters)
-        w = w + w_increment
+        
+        w = w*multiplier
 
     plt.plot(ws, iters)
     plt.show()
@@ -240,7 +265,7 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method, precondi
 
 def direct_method(M, J, b, start_freq, end_freq, num_points):
     '''
-    thomas_method(M, J, b, start_freq, end_freq, num_points, k=0)
+    direct_method(M, J, b, start_freq, end_freq, num_points, k=0)
     
     calculates impedence for a range of frequencies using scipy
 
@@ -271,18 +296,113 @@ def direct_method(M, J, b, start_freq, end_freq, num_points):
     '''
     Zs = []
     ws = np.exp(np.linspace(np.log(start_freq), np.log(end_freq), num_points))
-
+    M = scipy.sparse.csc_matrix(M)
+    J = scipy.sparse.csc_matrix(J)
+    #timesLU = []
+    #timesSUB = []
     for w in ws:
         A = 1.j*w*M - J
-        ans = scipy.sparse.linalg.spsolve(A, b)
+        #st = time.time()
+        lu = scipy.sparse.linalg.splu(A)
+        #mt = time.time()
+        ans = lu.solve(np.array(b))
+        #et = time.time()
         V = ans[-2]
         I = ans[-1]
         Z = V/I
         Zs.append(Z)
+        #tlu = mt - st
+        #tsub = et - mt
+        #timesLU.append(tlu)
+        #timesSUB.append(tsub)
     
+    #print('times')
+    #print(timesLU)
+    #print(timesSUB)
+    #plt.plot(ws, timesLU)
+    #plt.show()
+    #plt.plot(ws, timesSUB)
+    #plt.show()
     return Zs, ws
-            
+
+def semi_direct_method(M, J, b, start_freq, end_freq, num_points):
+    '''
+    semi_direct_method(M, J, b, start_freq, end_freq, num_points, k=0)
+    
+    calculates impedence for a range of frequencies using scipy
+
+    solves iwMc = Jc + b
+    
+    Parameters
+    ----------
+    M : sparse csr matrix
+        Must be block diagonal
+    J : sparse csr matrix
+        Must be block tridiagonal
+    b : numpy 1xn array
+    start_freq : float
+        The initial frequency in a frequency range to be evaluated at.
+    end_freq : float
+        The final frequency in a frequency range to be evaluated at.
+    num_points : int
+        the minimum number of frequencies impedence is calculated at over
+        the range.
+
+    Returns
+    -------
+    Zs : list
+        Complex values of impedence at each frequecy.
+    ws : list
+        Frequencies evaluated at.
+
+    '''
+    Zs = []
+    ws = np.exp(np.linspace(np.log(start_freq), np.log(end_freq), num_points))
+    M = scipy.sparse.csc_matrix(M)
+    J = scipy.sparse.csc_matrix(J)
+    ratio = 0
+    #timesLU = []
+    #timesSUB = []
+    for i, w in enumerate(ws):
         
+        if i % (ratio+1) == 0 or i % (ratio+1) == 1:
+            A = 1.j*w*M - J
+            #st = time.time()
+            lu = scipy.sparse.linalg.splu(A)
+            #mt = time.time()
+            
+            ans = lu.solve(np.array(b))
+            
+            #et = time.time()
+            #tlu = mt - st
+            #tsub = et - mt
+            #timesLU.append(tlu)
+            #timesSUB.append(tsub)
+            V = ans[-2]
+            I = ans[-1]
+            Z = V/I
+            Zs.append(Z)
+            
+            if i != 0:
+                if np.abs(Z-Zs[-2]) < 0.01:
+                    ratio += 1
+                    print(ratio)
+
+        else:
+            Z = 2*Zs[-1] - Zs[-2]
+            Zs.append(Z)
+            
+
+        
+    
+    #print('times')
+    #print(timesLU)
+    #print(timesSUB)
+    #plt.plot(ws, timesLU)
+    #plt.show()
+    #plt.plot(ws, timesSUB)
+    #plt.show()
+    return Zs, ws
 def get_k(M):
     '''
     get_k(M)
@@ -302,7 +422,7 @@ def get_k(M):
         the block size
     '''
 
-    n = np.shape(M)[0]
+    #n = np.shape(M)[0]
     for i in range(np.shape(M)[0]):
         if M[i, 0] == 0:
             if all(M[i, j]==0 for j in range(i)):

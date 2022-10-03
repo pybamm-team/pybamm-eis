@@ -105,10 +105,10 @@ parameter_values = pybamm.ParameterValues("Chen2020")
 parameter_values["Current function [A]"] = 2.5
 
 var_pts = {
-            "x_n": 100, #negative electrode, normally all 30, max 100
-            "x_s": 100,
-            "x_p": 100,
-            "r_n": 100,  #each particle
+            "x_n": 96, #negative electrode, normally all 30, max 100
+            "x_s": 80,
+            "x_p": 94,
+            "r_n": 90,  #each particle
             "r_p": 100,
 }
 
@@ -147,8 +147,9 @@ b = np.zeros(y0.shape)
 b[-1] = -1
 M = model.mass_matrix.entries
 A = 1j * 5 * M - J
-
-answers, ws, timer = EIS(M, J, b, 1, 1000, 10, method = 'direct')
+plt.spy(M)
+plt.show()
+answers, ws, timer = EIS(M, J, b, 1, 1000, 100, method = 'prebicgstab')
 nyquist_plot(answers)
 print(timer)
 

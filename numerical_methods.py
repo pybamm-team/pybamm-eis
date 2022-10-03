@@ -115,7 +115,7 @@ def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
     
     pk = np.zeros(np.shape(b))
     vk = pk
-    max_num_iter = 40#2*np.shape(b)[0]
+    max_num_iter = 2*np.shape(b)[0]
     
     for k in range(1, max_num_iter+1):
         rhok1 = rhok
@@ -155,7 +155,7 @@ def prebicgstab(A, b, L, U = 'none', start_point = 'zero', callback = empty, tol
         A square matrix.
     b : numpy 1xn array
     L : scipy sparse csr matrix
-        A lower (block) triangular matrix
+        A lower (block) triangular matrix (or superLU object)
     U : scipy sparse crs matrix, optional
         An Upper (block) triangular matrix. None used if not given.
     triangular: Specifies if the 2 above matrices are triangular. Note longer
@@ -190,7 +190,11 @@ def prebicgstab(A, b, L, U = 'none', start_point = 'zero', callback = empty, tol
     pk = np.zeros(np.shape(b))
     vk = pk
     
-    max_num_iter = 40#2*np.shape(b)[0]
+    max_num_iter = 2*np.shape(b)[0]
+    
+    superLU = False
+    if type(L) == scipy.sparse.linalg.SuperLU:
+        superLU = True
     
     if type(U) != str:
         U_exists = True
@@ -203,9 +207,12 @@ def prebicgstab(A, b, L, U = 'none', start_point = 'zero', callback = empty, tol
         beta_k = (rhok/rhok1)*(alpha_k/wk)
         pk = rk + beta_k*(pk - wk*vk)
 
-        y = scipy.sparse.linalg.spsolve(L, pk)
-        if U_exists:
-            y = np.array(scipy.sparse.linalg.spsolve(U, y))
+        if superLU:
+            y = np.array(L.solve(pk))
+        else:
+            y = scipy.sparse.linalg.spsolve(L, pk)
+            if U_exists:
+                y = np.array(scipy.sparse.linalg.spsolve(U, y))
         
         y = np.reshape(y, size)
         
@@ -216,9 +223,12 @@ def prebicgstab(A, b, L, U = 'none', start_point = 'zero', callback = empty, tol
         
         s = rk - alpha_k*vk    
 
-        z = scipy.sparse.linalg.spsolve(L, s)
-        if U_exists:
-            z = np.array(scipy.sparse.linalg.spsolve(U, z))
+        if superLU:
+            z = np.array(L.solve(s))
+        else:
+            z = scipy.sparse.linalg.spsolve(L, s)
+            if U_exists:
+                z = np.array(scipy.sparse.linalg.spsolve(U, z))
                 
         z = np.reshape(z, size)
         
