@@ -78,7 +78,7 @@ def EIS(M, J, b, start_freq, end_freq, num_points, method = 'auto'):
     elif method == "semi-direct":
         Zs, ws = semi_direct_method(M, J, b, start_freq, end_freq, num_points)
     elif method == "auto":
-        Zs, ws = iterative_method(M, J, b, start_freq, end_freq, num_points, method, preconditioner = ELU)
+        Zs, ws = iterative_method(M, J, b, start_freq, end_freq, num_points, 'prebicgstab', preconditioner = ELU)
     else:
         raise Exception("Not a valid method")
     
@@ -134,7 +134,7 @@ def ELU(A, M, J, L, U, b):
         
     return L, U
 
-def iterative_method(M, J, b, start_freq, end_freq, num_points, method, preconditioner = ELU):
+def iterative_method(M, J, b, start_freq, end_freq, num_points, method = 'prebicgstab', preconditioner = ELU):
     '''
     iterative_method(M, J, b, start_freq, end_freq, num_points, method)
     
@@ -201,9 +201,9 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method, precondi
         def callback(xk):
             nonlocal num_iters
             num_iters += 1
-            if num_iters % 5 == 1:
-                stored_vals.append(xk[-1])
-                ns.append(num_iters)
+            #if num_iters % 5 == 1:
+            stored_vals.append(xk[-1])
+            ns.append(num_iters)
         
         if method == 'bicgstab':
             c = nm.bicgstab(A, b, start_point=start_point, callback=callback)
@@ -241,7 +241,7 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method, precondi
             #plt.scatter(ns, ys)
             #plt.show()
             if ys[-1] == y_min:
-                n_val = ns[-1]+5
+                n_val = ns[-1]+1
                 w_log_increment = min(n_val/y_min[0], w_log_increment_max)
             else:
                 w_log_increment = min(ns[ys.index(y_min)]/y_min[0], w_log_increment_max)

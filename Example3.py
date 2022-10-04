@@ -55,7 +55,7 @@ param.process_model(model)
 param.process_geometry(geometry)
 
 submesh_types = {"rod": pybamm.Uniform1DSubMesh}
-var_pts = {x: 8}
+var_pts = {x: 1000}
 mesh = pybamm.Mesh(geometry, submesh_types, var_pts)
 spatial_methods = {"rod": pybamm.FiniteVolume()}
 disc = pybamm.Discretisation(mesh, spatial_methods)
@@ -77,11 +77,10 @@ from scipy.sparse import csc_matrix
 row = variable_y_indices
 col = np.array([0])
 data = np.array([-1])
-b = csc_matrix((data, (row, col)), shape=y0.shape).todense()
+b = np.array(csc_matrix((data, (row, col)), shape=y0.shape).todense())
 
 M = model.mass_matrix.entries
 
-
-answers, ws, timer = EIS(M, J, b, 1, 1000, 1000, method = 'prebicgstab')
+answers, ws, timer = EIS(M, J, b, 1, 1000, 100, method = 'auto')
 nyquist_plot(answers)
 print(timer)
