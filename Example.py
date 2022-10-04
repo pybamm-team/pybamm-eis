@@ -12,8 +12,8 @@ import scipy.fft
 import time
 
 start_freq = 1
-end_freq = 1000
-num_points = 100
+end_freq = 5
+num_points = 2
 start_time = time.time()
 
 answers = []
@@ -88,10 +88,12 @@ for omega in ws:
     
     # Example: simulate for 10/omega seconds
     samples_per_period = 128
-    num_periods = 3
-    skip_periods = 2
-    dt = 1/(2*np.pi*omega)/samples_per_period
-    t_eval = np.array(range(0, samples_per_period*(num_periods+skip_periods))) * dt *2 * np.pi
+    num_periods = 5
+    
+    skip_periods = int(np.floor(4*omega))
+    
+    dt = 1/omega/samples_per_period
+    t_eval = np.array(range(0, samples_per_period*(num_periods+skip_periods))) * dt
     solution = solver.solve(model, t_eval)
     
     
@@ -106,15 +108,15 @@ for omega in ws:
     i = A * np.sin(2 * np.pi * omega * t)
     i_hat = scipy.fft.fft(i[skip_periods*samples_per_period:])
     
-    '''
+    
     import matplotlib.pyplot as plt
-    plt.plot(t, c)
+    plt.plot(t[skip_periods*samples_per_period:], c[skip_periods*samples_per_period:])
     plt.show()
     plt.plot(x, np.abs(c_hat))
     plt.show()
     plt.plot(x, np.abs(i_hat))
     plt.show()
-    '''
+    
     index = np.argmax(np.abs(i_hat))
     
     z = c_hat[index]/i_hat[index]
