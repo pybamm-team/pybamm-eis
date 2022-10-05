@@ -12,15 +12,15 @@ import scipy.fft
 import time
 
 start_freq = 1
-end_freq = 5
-num_points = 2
+end_freq = 100
+num_points = 7
 start_time = time.time()
 
 answers = []
 ws = np.exp(np.linspace(np.log(start_freq), np.log(end_freq), num_points))
 
+
 for omega in ws:
-    
     model = pybamm.BaseModel()
     
     x = pybamm.SpatialVariable("x", domain="rod", coord_sys="cartesian")
@@ -51,16 +51,16 @@ for omega in ws:
     }
     
     geometry = {"rod": {x: {"min": pybamm.Scalar(0), "max": pybamm.Scalar(1)}}}
-    
+        
     def applied_flux_function(A, omega):
         "Flux must return a function of time only"
         def applied_flux(t):
             return A * pybamm.sin(2 * np.pi * omega * t)
         
         return applied_flux
+        
     
-    
-    # Choose amplitude and frequency 
+    # Choose amplitude 
     A = 2
     
     # Define parameter values object
@@ -93,7 +93,7 @@ for omega in ws:
     skip_periods = int(np.floor(4*omega))
     
     dt = 1/omega/samples_per_period
-    t_eval = np.array(range(0, samples_per_period*(num_periods+skip_periods))) * dt
+    t_eval = np.array(range(0, 1+samples_per_period*(num_periods+skip_periods))) * dt
     solution = solver.solve(model, t_eval)
     
     
@@ -103,26 +103,31 @@ for omega in ws:
     c = solution["Surface concentration"].entries  # array of size `Nx` by `Nt`
     
     #Fouries transform skipping the first 2 periods
-    c_hat = scipy.fft.fft(c[skip_periods*samples_per_period:])
-    x = np.linspace(0, 1/(2*dt), samples_per_period*num_periods)
+    c_hat = scipy.fft.fft(c[skip_periods*samples_per_period:]-1)
+    x = np.linspace(0, 1/dt, samples_per_period*num_periods)
     i = A * np.sin(2 * np.pi * omega * t)
     i_hat = scipy.fft.fft(i[skip_periods*samples_per_period:])
     
     
     import matplotlib.pyplot as plt
-    plt.plot(t[skip_periods*samples_per_period:], c[skip_periods*samples_per_period:])
+    plt.plot(t[skip_periods*samples_per_period:], c[skip_periods*samples_per_period:]-1)
     plt.show()
-    plt.plot(x, np.abs(c_hat))
+    plt.plot(t[skip_periods*samples_per_period:], i[skip_periods*samples_per_period:])
     plt.show()
-    plt.plot(x, np.abs(i_hat))
+    plt.plot(x[:200], np.abs(c_hat[:200]))
+    plt.show()
+    plt.plot(x[:200], np.abs(i_hat[:200]))
     plt.show()
     
     index = np.argmax(np.abs(i_hat))
     
     z = c_hat[index]/i_hat[index]
+    print(x[index])
     answers.append(z)
 
 end_time = time.time()
 timer = end_time - start_time
 print(timer)
 nyquist_plot(answers)
+print(answers)
+print(ws)
