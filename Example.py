@@ -9,11 +9,12 @@ import pybamm
 import numpy as np
 from EIS_from_model import nyquist_plot, EIS
 import scipy.fft
+import scipy.sparse
 import time
 
-start_freq = 1
+start_freq = 0.01
 end_freq = 100
-num_points = 7
+num_points = 15
 start_time = time.time()
 
 answers = []
@@ -55,7 +56,7 @@ for omega in ws:
     def applied_flux_function(A, omega):
         "Flux must return a function of time only"
         def applied_flux(t):
-            return A * pybamm.sin(2 * np.pi * omega * t)
+            return A * pybamm.sin(omega * t)
         
         return applied_flux
         
@@ -92,7 +93,7 @@ for omega in ws:
     
     skip_periods = int(np.floor(4*omega))
     
-    dt = 1/omega/samples_per_period
+    dt = 2 * np.pi/omega/samples_per_period
     t_eval = np.array(range(0, 1+samples_per_period*(num_periods+skip_periods))) * dt
     solution = solver.solve(model, t_eval)
     
@@ -105,7 +106,7 @@ for omega in ws:
     #Fouries transform skipping the first 2 periods
     c_hat = scipy.fft.fft(c[skip_periods*samples_per_period:]-1)
     x = np.linspace(0, 1/dt, samples_per_period*num_periods)
-    i = A * np.sin(2 * np.pi * omega * t)
+    i = A * np.sin(omega * t)
     i_hat = scipy.fft.fft(i[skip_periods*samples_per_period:])
     
     
@@ -121,8 +122,7 @@ for omega in ws:
     
     index = np.argmax(np.abs(i_hat))
     
-    z = c_hat[index]/i_hat[index]
-    print(x[index])
+    z = -c_hat[index]/i_hat[index]
     answers.append(z)
 
 end_time = time.time()
@@ -201,7 +201,16 @@ J = model.jac_rhs_algebraic_eval(0, y0, []).sparse()  #  call the Jacobian and r
 b = model.rhs_algebraic_eval(0, y0, [])
 M = model.mass_matrix.entries
 
-answers, ws, timer = EIS(model, 1, 100, 7, method = 'thomas')
+
+extra_entry = scipy.sparse.csr_matrix([[0]])
+M = scipy.sparse.block_diag([M, extra_entry])
+extra_entry[0, 0] = 1
+J = scipy.sparse.block_diag([J, extra_entry])
+size = np.shape(J)[0]
+b = np.reshape(np.append(b, 1), [size, 1])
+
+answers, ws, timer = EIS(M, J, b, 0.01, 100, 15, method = 'direct')
 nyquist_plot(answers)
 print(timer)
-
+print(answers)
+print(ws)
