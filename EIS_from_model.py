@@ -16,7 +16,6 @@ LUt = 1
 st = 0
 
 def EIS(M, J, b, start_freq, end_freq, num_points, method = 'auto'):
-    #redo this
     '''
     EIS(M, J, b, start_freq, end_freq, num_points, method = 'auto')
     
@@ -47,7 +46,9 @@ def EIS(M, J, b, start_freq, end_freq, num_points, method = 'auto'):
         bicgstab - use bicg with no preconditioning
         prebicgstab - use bicg with preconditioning
         direct - use Gaussian elimination
-        auto - chooses what is expected to be best automatically
+        semi-direct - use Gaussian elimination and approximate other points - 
+        can be a little unreliable.
+        auto - chooses a good method automatically
         
         The default is 'auto'.
 
@@ -71,6 +72,9 @@ def EIS(M, J, b, start_freq, end_freq, num_points, method = 'auto'):
     
     start_timer = time.time()
     
+    if start_freq <= 0 or end_freq < start_freq:
+        raise Exception("Invalid range of frequencies")
+
     if method == "bicgstab" or method == "prebicgstab" or method == "cg":
         Zs, ws = iterative_method(M, J, b, start_freq, end_freq, num_points, method)    
     elif method == "direct":
@@ -90,6 +94,35 @@ def EIS(M, J, b, start_freq, end_freq, num_points, method = 'auto'):
 
 
 def ILU(A, M, J, L, U, b = None):
+    '''
+    ILU(A, M, J, L, U, b = None)
+    
+    An ILU preconditioner method to be used with prebicgstab
+    
+    Parameters
+    ----------
+    
+    A : Sparse csr matrix
+        The matrix to solve for
+    M : Sparse csr matrix
+        The mass matrix
+    J : Sparse csr matrix
+        The Jacobian
+    L : Sparse csr matrix
+        The previous L in an LU preconditioner
+    U : Sparse csr matrix
+        The previous U in an LU preconditioner
+    b : n x 1 numpy array (optional)
+        The RHS of Ax = b. This is rarely needed for preconditioners.
+        
+    Returns
+    -------
+    
+    L : Sparse csr matrix
+        The L in an approximate LU factorisation
+    U : Sparse csr matrix
+        The U in an approximate LU factorisation
+    '''
     if type(L) == str:
         k = get_k(M)
         M_diags, A_diags = get_block_diagonals(M, A, k)
@@ -98,13 +131,74 @@ def ILU(A, M, J, L, U, b = None):
     return L, U
 
 def G_S(A, M, J, L, U, b = None):
+    '''
+    G_S(A, M, J, L, U, b = None)
+    
+    A Gauss-Siedel preconditioner method to be used with prebicgstab
+    
+    Parameters
+    ----------
+    
+    A : Sparse csr matrix
+        The matrix to solve for
+    M : Sparse csr matrix
+        The mass matrix
+    J : Sparse csr matrix
+        The Jacobian
+    L : Sparse csr matrix
+        The previous L in an LU preconditioner
+    U : Sparse csr matrix
+        The previous U in an LU preconditioner
+    b : n x 1 numpy array (optional)
+        The RHS of Ax = b. This is rarely needed for preconditioners.
+        
+    Returns
+    -------
+    
+    L : Sparse csr matrix
+        The L in an approximate LU factorisation
+    U : String
+        A return just to fill the space for U
+    '''
     L = scipy.sparse.tril(A, format = 'csr')
     U = 'none'
     return L, U
 
 def G_S_V(A, M, J, L, U, b = None):
-    #Note L and U are reversed here because this is actually a UL factorisation.
-    #This doesn't affect bicgstab.
+    '''
+    G_S_V(A, M, J, L, U, b = None)
+    
+    A variant of the Gauss-Siedel preconditioner to be used with prebicgstab
+    
+    Parameters
+    ----------
+    
+    A : Sparse csr matrix
+        The matrix to solve for
+    M : Sparse csr matrix
+        The mass matrix
+    J : Sparse csr matrix
+        The Jacobian
+    L : Sparse csr matrix
+        The previous L in an LU preconditioner
+    U : Sparse csr matrix
+        The previous U in an LU preconditioner
+    b : n x 1 numpy array (optional)
+        The RHS of Ax = b. This is rarely needed for preconditioners.
+        
+    Returns
+    -------
+    
+    L : Sparse csr matrix
+        The L in an approximate LU factorisation
+    U : Sparse csr matrix
+        The U in an approximate LU factorisation
+        
+    Note L and U are reversed here because this is actually a UL factorisation.
+    This doesn't affect bicgstab but is useful for consistency with returns
+    from other preconditioners.
+    '''
+
     
     U = scipy.sparse.tril(A, format = 'csr')
     L = scipy.sparse.triu(A, k = 1, format = 'csr')
@@ -113,6 +207,36 @@ def G_S_V(A, M, J, L, U, b = None):
     return L, U
 
 def ELU(A, M, J, L, U, b):
+    '''
+    ELU(A, M, J, L, U, b = None)
+    
+    A  preconditioner method using exact factorisations to be used with
+    prebicgstab. Also decides when to do factorisations based on time taken.
+    
+    Parameters
+    ----------
+    
+    A : Sparse csr matrix
+        The matrix to solve for
+    M : Sparse csr matrix
+        The mass matrix
+    J : Sparse csr matrix
+        The Jacobian
+    L : Sparse csr matrix
+        The previous L in an LU preconditioner
+    U : Sparse csr matrix
+        The previous U in an LU preconditioner
+    b : n x 1 numpy array (optional)
+        The RHS of Ax = b. This is rarely needed for preconditioners.
+        
+    Returns
+    -------
+    
+    L : SuperLU
+        SuperLU data type containing L and U
+    U : String
+        A return just to fill the space for U
+    '''
     global start_point, st, LUt
     
     et = time.time()
@@ -136,7 +260,7 @@ def ELU(A, M, J, L, U, b):
 
 def iterative_method(M, J, b, start_freq, end_freq, num_points, method = 'prebicgstab', preconditioner = ELU):
     '''
-    iterative_method(M, J, b, start_freq, end_freq, num_points, method)
+    iterative_method(M, J, b, start_freq, end_freq, num_points, method = 'prebicgstab', preconditioner = ELU)
     
     calculates impedence for a range of frequencies using an iterative method
 
@@ -157,15 +281,13 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method = 'prebic
     method : string, optional
         the numerical algorithm to use. Options are:
         cg - conjugate gradient - only use for Hermitian matrices
-        bicgstab - use for matrices where no preconditioner is known
-        prebicgstab - use for matrices where a preconditioner is known - for
-        example near block tridiagonal matrices.
+        bicgstab - use bicgstab with no preconditioner
+        prebicgstab - use bicgstab with a preconditioner
     preconditioner: function, optional
         A function that calculates a preconditioner from A, M, J and the previous 
         preconditioner. Returns L, U, triangular. Only relevent when using prebicgstab.
-        Default is Gauss-Seidel. Return 'none' as a string for U if only L is
-        being used. Return triangular as True if both are triangular and False
-        if not (eg block preconditioner).
+        Default is ELU. Return 'none' as a string for U if only L is
+        being used.
         
     Returns
     -------
@@ -175,8 +297,11 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method = 'prebic
         Frequencies evaluated at.
 
     '''
-
-    # gives answers for a list of frequencies
+    
+    #rescale the matrices to get faster convergence in the last 2 entries
+    A = 1.j*start_freq*M - J
+    M, J, b = nm.matrix_rescale(A, M, J, b)
+    
     Zs = []
     ws = []
     w = start_freq
@@ -189,7 +314,6 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method = 'prebic
     w_log_increment_max = (np.log(end_freq) - np.log(start_freq)) / num_points
     iters = []
     while w <= end_freq:
-        #print(w)
         A = 1.j*w*M - J
         num_iters = 0
         stored_vals = []
@@ -201,7 +325,6 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method = 'prebic
         def callback(xk):
             nonlocal num_iters
             num_iters += 1
-            #if num_iters % 5 == 1:
             stored_vals.append(xk[-1])
             ns.append(num_iters)
         
@@ -211,7 +334,6 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method = 'prebic
             c = nm.prebicgstab(A, b, L, U, start_point=start_point, callback=callback)
         else:
             c = nm.conjugate_gradient(A, b, start_point=start_point, callback=callback)
-        #print(num_iters)
 
         V = c[-2]
         I = c[-1]
@@ -234,24 +356,15 @@ def iterative_method(M, J, b, start_freq, end_freq, num_points, method = 'prebic
                 y = 2*ns[j]/(-w_log_increment+np.sqrt((w_log_increment)**2+4*(e+0.01)/kappa))
                 ys.append(y)
             y_min = min(ys)
-            #print(ys)
-            #print(ns)
-            #plt.scatter(ns, es)
-            #plt.show()
-            #plt.scatter(ns, ys)
-            #plt.show()
             if ys[-1] == y_min:
                 n_val = ns[-1]+1
                 w_log_increment = min(n_val/y_min[0], w_log_increment_max)
             else:
                 w_log_increment = min(ns[ys.index(y_min)]/y_min[0], w_log_increment_max)
                 
-            #print(y_min)
             start_point = c + w_log_increment/old_increment * (c - old_c)
         
         multiplier = np.exp(w_log_increment)
-        #if w_increment == w_increment_max:
-        #    print("MAX")
 
 
         ws.append(w)
@@ -298,31 +411,14 @@ def direct_method(M, J, b, start_freq, end_freq, num_points):
     ws = np.exp(np.linspace(np.log(start_freq), np.log(end_freq), num_points))
     M = scipy.sparse.csc_matrix(M)
     J = scipy.sparse.csc_matrix(J)
-    #timesLU = []
-    #timesSUB = []
     for w in ws:
         A = 1.j*w*M - J
-        #st = time.time()
         lu = scipy.sparse.linalg.splu(A)
-        #mt = time.time()
         ans = lu.solve(np.array(b))
-        #et = time.time()
         V = ans[-2]
         I = ans[-1]
         Z = V/I
         Zs.append(Z)
-        #tlu = mt - st
-        #tsub = et - mt
-        #timesLU.append(tlu)
-        #timesSUB.append(tsub)
-    
-    #print('times')
-    #print(timesLU)
-    #print(timesSUB)
-    #plt.plot(ws, timesLU)
-    #plt.show()
-    #plt.plot(ws, timesSUB)
-    #plt.show()
     return Zs, ws
 
 def semi_direct_method(M, J, b, start_freq, end_freq, num_points):
@@ -361,23 +457,14 @@ def semi_direct_method(M, J, b, start_freq, end_freq, num_points):
     M = scipy.sparse.csc_matrix(M)
     J = scipy.sparse.csc_matrix(J)
     ratio = 0
-    #timesLU = []
-    #timesSUB = []
     for i, w in enumerate(ws):
         
         if i % (ratio+1) == 0 or i % (ratio+1) == 1:
             A = 1.j*w*M - J
-            #st = time.time()
             lu = scipy.sparse.linalg.splu(A)
-            #mt = time.time()
             
             ans = lu.solve(np.array(b))
-            
-            #et = time.time()
-            #tlu = mt - st
-            #tsub = et - mt
-            #timesLU.append(tlu)
-            #timesSUB.append(tsub)
+
             V = ans[-2]
             I = ans[-1]
             Z = V/I
@@ -392,16 +479,6 @@ def semi_direct_method(M, J, b, start_freq, end_freq, num_points):
             Z = 2*Zs[-1] - Zs[-2]
             Zs.append(Z)
             
-
-        
-    
-    #print('times')
-    #print(timesLU)
-    #print(timesSUB)
-    #plt.plot(ws, timesLU)
-    #plt.show()
-    #plt.plot(ws, timesSUB)
-    #plt.show()
     return Zs, ws
 def get_k(M):
     '''
@@ -421,20 +498,9 @@ def get_k(M):
     k : int
         the block size
     '''
-
-    #n = np.shape(M)[0]
     for i in range(np.shape(M)[0]):
         if M[i, 0] == 0:
             if all(M[i, j]==0 for j in range(i)):
-                '''
-                counter = 0
-                for m in range(i):
-                    if all((M[m, j]==0 and M[j, m]==0) for j in range(i, n)):
-                        counter += 1
-                    else:
-                        break
-                if counter == i:
-                '''
                 k = int(i)
                 break
     return k

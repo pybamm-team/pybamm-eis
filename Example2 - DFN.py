@@ -5,6 +5,9 @@ Created on Wed Sep 28 01:30:52 2022
 @author: rish3
 """
 
+'''
+Here we find the EIS spectrum for the DFN model with capicitance
+'''
 import pybamm
 import numpy as np
 import matplotlib.pyplot as plt
@@ -105,11 +108,11 @@ parameter_values = pybamm.ParameterValues("Chen2020")
 parameter_values["Current function [A]"] = 2.5
 
 var_pts = {
-            "x_n": 10, #negative electrode, normally all 30, max 100
-            "x_s": 10,
-            "x_p": 10,
-            "r_n": 10,  #each particle
-            "r_p": 10,
+            "x_n": 30, #negative electrode, normally all 30, max 100
+            "x_s": 30,
+            "x_p": 30,
+            "r_n": 30,  #each particle
+            "r_p": 30,
 }
 
 for model in models:
@@ -133,23 +136,18 @@ sols[1].y[inds["Current density variable"], :] * I_typ
 model = sols[1].all_models[0]
 y0 = model.concatenated_initial_conditions.entries  # vector of initial conditions
 J = model.jac_rhs_algebraic_eval(0, y0, []).sparse()  #  call the Jacobian and return a (sparse) matrix
-plt.spy(J)
+plt.spy(J) #A plot demonstrating what J looks like
 plt.show()
-
-'''
-row = inds["Current density variable"]
-col = np.array([0])
-data = np.array([-1])  
-b = csc_matrix((data, (row, col)), shape=y0.shape).todense()
-'''
 
 b = np.zeros(y0.shape)
 b[-1] = 1
 
 M = model.mass_matrix.entries
 A = 1j * 5 * M - J
-plt.spy(M)
+plt.spy(M) #A plot demonstrating what M looks like
 plt.show()
+
+#Calculate EIS and plot using EIS_from_model
 answers, ws, timer = EIS(M, J, b, 10, 10000000, 100, method = 'auto')
 nyquist_plot(answers)
 print(timer)

@@ -5,12 +5,18 @@ Created on Sun Sep 18 20:08:31 2022
 @author: rish3
 """
 
+'''
+In this example we find the EIS model of a simple diffusion problem using 
+the time domain and the frequency domain for comparison.
+'''
 import pybamm
 import numpy as np
 from EIS_from_model import nyquist_plot, EIS
 import scipy.fft
 import scipy.sparse
 import time
+
+#First we solve in the time domain
 
 start_freq = 0.01
 end_freq = 100
@@ -22,6 +28,7 @@ ws = np.exp(np.linspace(np.log(start_freq), np.log(end_freq), num_points))
 
 
 for omega in ws:
+    #Set up the model and simulate with Pybamm
     model = pybamm.BaseModel()
     
     x = pybamm.SpatialVariable("x", domain="rod", coord_sys="cartesian")
@@ -103,12 +110,17 @@ for omega in ws:
     t = solution["Time"].entries  # array of size `Nt`
     c = solution["Surface concentration"].entries  # array of size `Nx` by `Nt`
     
-    #Fouries transform skipping the first 2 periods
+    #Fourier Transform to find impedence
     c_hat = scipy.fft.fft(c[skip_periods*samples_per_period:]-1)
     x = np.linspace(0, 1/dt, samples_per_period*num_periods)
     i = A * np.sin(omega * t)
     i_hat = scipy.fft.fft(i[skip_periods*samples_per_period:])
     
+    
+    
+    '''
+    #The following is useful for plots of current and voltage and their
+    Fourier transforms if desired
     
     import matplotlib.pyplot as plt
     plt.plot(t[skip_periods*samples_per_period:], c[skip_periods*samples_per_period:]-1)
@@ -119,6 +131,7 @@ for omega in ws:
     plt.show()
     plt.plot(x[:200], np.abs(i_hat[:200]))
     plt.show()
+    '''
     
     index = np.argmax(np.abs(i_hat))
     
@@ -128,21 +141,15 @@ for omega in ws:
 end_time = time.time()
 timer = end_time - start_time
 print(timer)
+#create a plot of the answers
 nyquist_plot(answers)
 print(answers)
 print(ws)
 
-########################
-####FREQUENCY DOMAIN####
-########################
+#Now we solve in the frequency domain, demonstrating the difference in speed 
+#while obtaining the same answers.
 
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Sep 18 20:08:31 2022
-
-@author: rish3
-"""
-
+#set up the model
 model = pybamm.BaseModel()
 
 x = pybamm.SpatialVariable("x", domain="rod", coord_sys="cartesian")
@@ -195,13 +202,15 @@ disc.process_model(model)
 solver = pybamm.ScipySolver()
 solver.set_up(model)
 
+#Get the matrices and vector b from the model
 y0 = model.concatenated_initial_conditions.entries  # vector of initial conditions
 J = model.jac_rhs_algebraic_eval(0, y0, []).sparse()  #  call the Jacobian and return a (sparse) matrix
 
 b = model.rhs_algebraic_eval(0, y0, [])
 M = model.mass_matrix.entries
 
-
+#Add an extra row with just one entry. This is important as voltage must be
+# the second to last entry and current last when using EIS_from_model.
 extra_entry = scipy.sparse.csr_matrix([[0]])
 M = scipy.sparse.block_diag([M, extra_entry])
 extra_entry[0, 0] = 1
@@ -209,6 +218,7 @@ J = scipy.sparse.block_diag([J, extra_entry])
 size = np.shape(J)[0]
 b = np.reshape(np.append(b, 1), [size, 1])
 
+#Solve using a direct method and plot the answers
 answers, ws, timer = EIS(M, J, b, 0.01, 100, 15, method = 'direct')
 nyquist_plot(answers)
 print(timer)

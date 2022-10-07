@@ -11,9 +11,9 @@ def empty(xk):
     #An empty callback function. Callbacks can be written as desired.
     pass
 
-def conjugate_gradient(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
+def conjugate_gradient(A, b, start_point = 'zero', callback = empty, tol = 10**-3):
     '''
-    conjugate_gradient(A, b, start_point = 'zero', callback = empty, tol = 10**-5)
+    conjugate_gradient(A, b, start_point = 'zero', callback = empty, tol = 10**-3)
     
     Uses the conjugate gradient method to solve Ax = b
     
@@ -76,9 +76,9 @@ def conjugate_gradient(A, b, start_point = 'zero', callback = empty, tol = 10**-
     return xk
 
 
-def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):    
+def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-3):    
     '''
-    bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5)
+    bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-3)
     
     Uses the BicgSTAB method to solve Ax = b
     
@@ -93,7 +93,7 @@ def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
         a function callback(xk) that can be written to happen each iteration.
         The default is empty.
     tol : float, optional
-        A tolerance at which to stop the iteration. The default is 10**-5.
+        A tolerance at which to stop the iteration. The default is 10**-3.
 
     Returns
     -------
@@ -133,18 +133,17 @@ def bicgstab(A, b, start_point = 'zero', callback = empty, tol = 10**-5):
         t = A@s
         
         wk = np.dot(np.conj(t.T), s)/np.dot(np.conj(t.T), t)
-        xk1 = xk
         xk = h + wk*s
         callback(xk)
-        if np.linalg.norm(xk - xk1, 1) < tol:
+        if np.linalg.norm(rk, 1) < tol:
             break
         else:
             rk = s - wk*t  
     return xk
 
-def prebicgstab(A, b, L, U = 'none', start_point = 'zero', callback = empty, tol = 10**-5):
+def prebicgstab(A, b, L, U = 'none', start_point = 'zero', callback = empty, tol = 10**-3):
     '''
-    prebicgstab(A, b, L, U, start_point = 'zero', callback = empty)
+    prebicgstab(A, b, L, U, start_point = 'zero', callback = empty, tol = 10**-3)
     
     Uses the preconditioned BicgSTAB method to solve Ax = b. The preconditioner
     is of the form LU, or just of the form L.
@@ -166,7 +165,7 @@ def prebicgstab(A, b, L, U = 'none', start_point = 'zero', callback = empty, tol
         a function callback(xk) that can be written to happen each iteration.
         The default is empty.
     tol : float, optional
-        A tolerance at which to stop the iteration. The default is 10**-5.
+        A tolerance at which to stop the iteration. The default is 10**-3.
 
     Returns
     -------
@@ -181,6 +180,7 @@ def prebicgstab(A, b, L, U = 'none', start_point = 'zero', callback = empty, tol
         
     xk = np.array(start_point)
     rk = np.array(b) - A@xk
+    
     r0 = np.conj(rk)
     
     rhok = 1
@@ -235,10 +235,9 @@ def prebicgstab(A, b, L, U = 'none', start_point = 'zero', callback = empty, tol
         t = A@z
         
         wk = np.dot(np.conj(t.T), s)/np.dot(np.conj(t.T), t)
-        xk1 = xk
         xk = h + wk*z
         callback(xk)
-        if np.linalg.norm(xk - xk1, 1) < tol:
+        if np.linalg.norm(rk, 1) < tol:
             break
         else:
             rk = s - wk*t  
@@ -306,3 +305,18 @@ def ILUpreconditioner(diag1, diag2, diag3):
             for i in range(m)], format='csr')
     
     return L, U
+
+def matrix_rescale(A, M, J, b):
+    n = np.shape(M)[0]
+    multiplier = np.ones(n, dtype = 'complex')
+    
+    multiplier[-2] = 3
+    multiplier[-1] = 2
+
+    multiplier = scipy.sparse.diags(multiplier)
+    M = multiplier@M
+    J = multiplier@J
+    b = multiplier@b
+
+    return M, J, b
+    

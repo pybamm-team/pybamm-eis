@@ -81,6 +81,6 @@ b = np.array(csc_matrix((data, (row, col)), shape=y0.shape).todense())
 
 M = model.mass_matrix.entries
 
-answers, ws, timer = EIS(M, J, b, 1, 1000, 100, method = 'auto')
+answers, ws, timer = EIS(M, J, b, 1, 1000, 100, method = 'direct')
 nyquist_plot(answers)
 print(timer)
