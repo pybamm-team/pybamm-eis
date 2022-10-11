@@ -116,7 +116,6 @@ for model in models:
     sim = pybamm.Simulation(model, parameter_values=parameter_values, var_pts=var_pts)
     sol = sim.solve([0, 3600])
     sols.append(sol)
-
 pybamm.dynamic_plot(sols)
 
 model = sols[1].all_models[0]  # get the discretised model from the second simulation
