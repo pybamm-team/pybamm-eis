@@ -2,9 +2,8 @@
 # Preconditioners
 #
 import numpy as np
-import numerical_methods as nm
 import time
-from scipy.sparse import tril, triu, eye, csr_matrix
+from scipy.sparse import tril, triu, eye, csr_matrix, bmat
 from scipy.sparse.linalg import splu
 
 
@@ -97,6 +96,74 @@ def get_block_diagonals(M, J, k):
     return M_diag, (diag1, diag2, diag3)
 
 
+def ILUpreconditioner(diag1, diag2, diag3):
+    """
+    Creates an ILU preconditioner for A. A is block tridiagonal.
+    We have A equals approximately LU.
+
+    Parameters
+    ----------
+    diag1 : list of matrices
+        The lower diagonal of A.
+    diag2 : list of matrices
+        The main diagonal of A
+    diag3 : list of matrices
+        The upper diagonal of A
+
+    Returns
+    -------
+    L : scipy sparse csr matrix
+        A lower triangular matrix
+    U : scipy sparse csr matrix
+        An upper triangular matrix
+
+    """
+    m = len(diag2)
+
+    k = np.shape(diag1[0])[0]
+    Si = diag2[0]
+    Ss = [Si]
+    Ti = np.linalg.solve(Si, diag3[0])
+    Ts = [Ti]
+
+    prev = []
+
+    for i in range(2, m + 1):
+        current = [diag2[i - 1], diag1[i - 2], diag2[i - 2], diag3[i - 3], diag3[i - 2]]
+        if current == prev:
+            Ss.append(Si)
+            Ts.append(Ti)
+        else:
+            M = np.linalg.solve(current[2], current[3])
+            H = current[1] @ M
+            G = np.linalg.solve(current[0], H)
+            F = np.eye(k) + 2 * G
+            Si = current[0] @ np.linalg.inv(F)
+            Ss.append(Si)
+
+            if i != m:
+                Ti = np.linalg.solve(Si, current[4])
+                Ts.append(Ti)
+                prev = current
+
+    L = bmat(
+        [
+            [Ss[i] if i == j else diag1[j] if i - j == 1 else None for j in range(m)]
+            for i in range(m)
+        ],
+        format="csr",
+    )
+    U = bmat(
+        [
+            [np.eye(k) if i == j else Ts[i] if i - j == -1 else None for j in range(m)]
+            for i in range(m)
+        ],
+        format="csr",
+    )
+
+    return L, U
+
+
 def ILU(A, M, J, L, U, b=None):
     """
     An ILU preconditioner method to be used with prebicgstab
@@ -129,7 +196,7 @@ def ILU(A, M, J, L, U, b=None):
         k = get_k(M)
         M_diags, A_diags = get_block_diagonals(M, A, k)
 
-        L, U = nm.ILUpreconditioner(A_diags[0], A_diags[1], A_diags[2])
+        L, U = ILUpreconditioner(A_diags[0], A_diags[1], A_diags[2])
     return L, U
 
 
