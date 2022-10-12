@@ -67,8 +67,9 @@ class EISSimulation:
         # Forcing on the current density variable, which is the
         # final entry by construction.
         self.b = np.zeros_like(y0)
-        self.b[-1] = 3
+        self.b[-1] = -1
         self.timescale = self.built_model.timescale_eval
+        self.current_scale = sim.parameter_values.evaluate(model.param.I_typ)
 
     def set_up_model_for_eis(self, model, state):
         """
@@ -178,8 +179,11 @@ class EISSimulation:
                 x = lu.solve(self.b)
                 # The model is set up such that the voltage is the penultimate
                 # entry and the current density variable is the final entry
-                z = -x[-2][0] / x[-1][0]
+                # Note: current density variable is dimensionless so we need
+                # include the current scale from the model
+                z = -x[-2][0] / (x[-1][0] * self.current_scale)
                 impedances.append(z)
+                print((x[-1][0] * self.current_scale))
 
             self.solution = np.array(impedances)
         else:

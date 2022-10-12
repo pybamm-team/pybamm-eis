@@ -45,6 +45,7 @@ for frequency in frequencies:
     # FFT
     current_fft = fft(current)
     voltage_fft = fft(voltage)
+    print()
     # Get index of first harmonic
     idx = np.argmax(np.abs(current_fft))
     impedance = -voltage_fft[idx] / current_fft[idx]
@@ -54,30 +55,11 @@ end_time = time.time()
 time_elapsed = end_time - start_time
 print("Time domain method: ", time_elapsed, "s")
 
-# Charge to 4.2 volts and rest to steady state
-parameter_values = pybamm.ParameterValues("Chen2020")
-
-experiment = pybamm.Experiment(
-    [
-        (
-            "Charge at 1 C until 4.2 V",
-            "Hold at 4.2 V until 10 mA",
-            "Rest for 2 hours",
-        ),
-    ]
-)
-exp_sim = pybamm.Simulation(
-    model, parameter_values=parameter_values, experiment=experiment
-)
-exp_sol = exp_sim.solve()
-
 # Frequency domain
-
+parameter_values["Current function [A]"] = 0
 start_time = time.time()
-
 eis_sim = EISSimulation(model, parameter_values=parameter_values)
 impedances_freq = eis_sim.solve(frequencies)
-
 end_time = time.time()
 time_elapsed = end_time - start_time
 print("Frequency domain method: ", time_elapsed, "s")
