@@ -5,22 +5,23 @@ Created on Wed Sep 28 01:30:52 2022
 @author: rish3
 """
 
-'''
+"""
 Here we find the EIS spectrum for the DFN model with capicitance
-'''
+"""
 import pybamm
 import numpy as np
 import matplotlib.pyplot as plt
 from EIS_from_model import EIS, nyquist_plot
 
-model = pybamm.lithium_ion.DFN(options={"surface form":"differential"}) #DFN/SPM
+model = pybamm.lithium_ion.DFN(options={"surface form": "differential"})  # DFN/SPM
+
 
 def set_up_model_for_eis(model, inplace=True):
     """
-    Set up model so that current and voltage are states. 
-    This formulation is suitable for EIS calculations in 
-    the frequency domain. 
-    
+    Set up model so that current and voltage are states.
+    This formulation is suitable for EIS calculations in
+    the frequency domain.
+
     Parameters
     ----------
     model : :class:`pybamm.BaseModel`
@@ -28,11 +29,9 @@ def set_up_model_for_eis(model, inplace=True):
     inplace: bool, optional
         If True, modify the model in place. Otherwise, return a
         new model. Default is True.
-    """ 
-    pybamm.logger.info(
-        "Start setting up {} for EIS".format(model.name)
-    )    
-    
+    """
+    pybamm.logger.info("Start setting up {} for EIS".format(model.name))
+
     # Set up inplace vs not inplace
     if inplace:
         # any changes to model attributes will change new_model attributes
@@ -49,9 +48,9 @@ def set_up_model_for_eis(model, inplace=True):
 
     # Add an algebraic equation for the voltage variable
     new_model.algebraic[V_cell] = V_cell - V
-    new_model.initial_conditions[
-        V_cell
-    ] = new_model.param.p.U_ref - new_model.param.n.U_ref
+    new_model.initial_conditions[V_cell] = (
+        new_model.param.p.U_ref - new_model.param.n.U_ref
+    )
 
     # Now make current density a variable
     # To do so, we replace all instances of the current density in the
@@ -59,11 +58,9 @@ def set_up_model_for_eis(model, inplace=True):
     # FunctionControl submodel
 
     # Create the FunctionControl submodel and extract variables
-    external_circuit_variables = (
-        pybamm.external_circuit.FunctionControl(
-            model.param, None, model.options, control="algebraic"
-        ).get_fundamental_variables()
-    )
+    external_circuit_variables = pybamm.external_circuit.FunctionControl(
+        model.param, None, model.options, control="algebraic"
+    ).get_fundamental_variables()
 
     # Perform the replacement
     symbol_replacement_map = {
@@ -88,15 +85,12 @@ def set_up_model_for_eis(model, inplace=True):
         "Current function [A]", {"Time [s]": pybamm.t * new_model.param.timescale}
     )
     new_model.algebraic[i_cell] = I - I_applied
-    new_model.initial_conditions[
-        i_cell
-    ] = new_model.param.current_with_time
-    
-    pybamm.logger.info(
-        "Finish setting up {} for EIS".format(model.name)
-    )    
-    
+    new_model.initial_conditions[i_cell] = 0  # new_model.param.current_with_time
+
+    pybamm.logger.info("Finish setting up {} for EIS".format(model.name))
+
     return new_model
+
 
 new_model = set_up_model_for_eis(model, inplace=False)
 
@@ -108,18 +102,18 @@ parameter_values = pybamm.ParameterValues("Chen2020")
 parameter_values["Current function [A]"] = 2.5
 
 var_pts = {
-            "x_n": 30, #negative electrode, normally all 30, max 100
-            "x_s": 30,
-            "x_p": 30,
-            "r_n": 30,  #each particle
-            "r_p": 30,
+    "x_n": 30,  # negative electrode, normally all 30, max 100
+    "x_s": 30,
+    "x_p": 30,
+    "r_n": 30,  # each particle
+    "r_p": 30,
 }
 
 for model in models:
     sim = pybamm.Simulation(model, parameter_values=parameter_values, var_pts=var_pts)
     sol = sim.solve([0, 3600])
     sols.append(sol)
-    
+
 pybamm.dynamic_plot(sols)
 
 model = sols[1].all_models[0]  # get the discretised model from the second simulation
@@ -128,15 +122,17 @@ for key in inds.keys():
     variable = model.variables[key]
     variable_y_indices = np.arange(variable.first_point, variable.last_point)
     inds[key] = variable_y_indices
-    
-    
+
+
 I_typ = parameter_values.evaluate(model.param.I_typ)
 sols[1].y[inds["Current density variable"], :] * I_typ
 
 model = sols[1].all_models[0]
 y0 = model.concatenated_initial_conditions.entries  # vector of initial conditions
-J = model.jac_rhs_algebraic_eval(0, y0, []).sparse()  #  call the Jacobian and return a (sparse) matrix
-plt.spy(J) #A plot demonstrating what J looks like
+J = model.jac_rhs_algebraic_eval(
+    0, y0, []
+).sparse()  #  call the Jacobian and return a (sparse) matrix
+plt.spy(J)  # A plot demonstrating what J looks like
 plt.show()
 
 b = np.zeros(y0.shape)
@@ -144,11 +140,10 @@ b[-1] = 1
 
 M = model.mass_matrix.entries
 A = 1j * 5 * M - J
-plt.spy(M) #A plot demonstrating what M looks like
+plt.spy(M)  # A plot demonstrating what M looks like
 plt.show()
 
-#Calculate EIS and plot using EIS_from_model
-answers, ws, timer = EIS(M, J, b, 10, 10000000, 100, method = 'auto')
+# Calculate EIS and plot using EIS_from_model
+answers, ws, timer = EIS(M, J, b, 10, 10000000, 100, method="direct")
 nyquist_plot(answers)
 print(timer)
-
