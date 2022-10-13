@@ -7,7 +7,7 @@ from plotting import nyquist_plot
 from scipy.fft import fft
 
 # Set up
-model = pybamm.lithium_ion.SPMe(options={"surface form": "differential"})
+model = pybamm.lithium_ion.DFN(options={"surface form": "differential"})
 
 parameter_values = pybamm.ParameterValues("Chen2020")
 

@@ -62,7 +62,6 @@ class EISSimulation:
         solver = pybamm.BaseSolver()
         solver.set_up(self.built_model)
         self.y0 = self.built_model.concatenated_initial_conditions.entries
-        print(self.built_model.rhs_algebraic_eval(0, self.y0, []))
         self.J = self.built_model.jac_rhs_algebraic_eval(
             0, self.y0, []
         ).sparse()  # call the Jacobian and return a (sparse) matrix
