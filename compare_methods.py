@@ -12,17 +12,16 @@ model = pybamm.lithium_ion.SPMe(options={"surface form": "differential"})
 parameter_values = pybamm.ParameterValues("Chen2020")
 
 frequencies = np.logspace(-4, 2, 30)
-frequencies = [1]
+# frequencies = [10]
 
 # Time domain
-I_hat = 50 * 1e-3
-I = 2 * I_hat
+I = 10 * 1e-3
 number_of_periods = 20
 samples_per_period = 30
 
 
 def current_function(t):
-    return I * pybamm.sin(pybamm.InputParameter("Frequency [Hz]") * t)
+    return I * pybamm.sin(2 * np.pi * pybamm.InputParameter("Frequency [Hz]") * t)
 
 
 parameter_values["Current function [A]"] = current_function
@@ -35,7 +34,7 @@ sim = pybamm.Simulation(
 
 impedances_time = []
 for frequency in frequencies:
-    period = 2 * np.pi / frequency
+    period = 1 / frequency
     dt = period / samples_per_period
     t_eval = np.array(range(0, 1 + samples_per_period * number_of_periods)) * dt
     sol = sim.solve(t_eval, inputs={"Frequency [Hz]": frequency})
@@ -45,7 +44,6 @@ for frequency in frequencies:
     # FFT
     current_fft = fft(current)
     voltage_fft = fft(voltage)
-    print()
     # Get index of first harmonic
     idx = np.argmax(np.abs(current_fft))
     impedance = -voltage_fft[idx] / current_fft[idx]
@@ -67,6 +65,8 @@ print("Frequency domain method: ", time_elapsed, "s")
 _, ax = plt.subplots()
 ax = nyquist_plot(impedances_time, ax=ax, label="Time")
 ax = nyquist_plot(impedances_freq, ax=ax, label="Frequency")
-print(impedances_time[0].real / impedances_freq[0].real)
+scale = impedances_time[0].real / impedances_freq[0].real
+print(scale)
+ax = nyquist_plot(impedances_freq * scale, ax=ax, label="Frequency (scaled)")
 ax.legend()
 plt.show()

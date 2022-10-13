@@ -61,15 +61,15 @@ class EISSimulation:
         # Construct matrix problem
         solver = pybamm.BaseSolver()
         solver.set_up(self.built_model)
-        y0 = self.built_model.concatenated_initial_conditions.entries
-        print(self.built_model.rhs_algebraic_eval(0, y0, []))
+        self.y0 = self.built_model.concatenated_initial_conditions.entries
+        print(self.built_model.rhs_algebraic_eval(0, self.y0, []))
         self.J = self.built_model.jac_rhs_algebraic_eval(
-            0, y0, []
+            0, self.y0, []
         ).sparse()  # call the Jacobian and return a (sparse) matrix
         self.M = self.built_model.mass_matrix.entries
         # Forcing on the current density variable, which is the
         # final entry by construction.
-        self.b = np.zeros_like(y0)
+        self.b = np.zeros_like(self.y0)
         self.b[-1] = -1
         self.timescale = self.built_model.timescale_eval
         self.current_scale = sim.parameter_values.evaluate(model.param.I_typ)
@@ -177,16 +177,15 @@ class EISSimulation:
             J = csc_matrix(self.J)
             impedances = []
             for frequency in frequencies:
-                A = 1.0j * frequency * self.timescale * M - J
+                A = 1.0j * 2 * np.pi * frequency * self.timescale * M - J
                 lu = splu(A)
                 x = lu.solve(self.b)
                 # The model is set up such that the voltage is the penultimate
                 # entry and the current density variable is the final entry
                 # Note: current density variable is dimensionless so we need
-                # include the current scale from the model
-                z = -x[-2][0] / (x[-1][0] * self.current_scale)
+                # include the current scale from the model to get the actual current
+                z = -x[-2][0] / x[-1][0] / self.current_scale
                 impedances.append(z)
-                print((x[-1][0] * self.current_scale))
 
             self.solution = np.array(impedances)
         else:
