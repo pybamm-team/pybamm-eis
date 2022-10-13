@@ -56,7 +56,6 @@ time_elapsed = end_time - start_time
 print("Time domain method: ", time_elapsed, "s")
 
 # Frequency domain
-parameter_values["Current function [A]"] = 0
 start_time = time.time()
 eis_sim = EISSimulation(model, parameter_values=parameter_values)
 impedances_freq = eis_sim.solve(frequencies)

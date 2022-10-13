@@ -42,6 +42,8 @@ class EISSimulation:
         # TODO: pass in a starting solution to use as the current state
 
         # Set up the model for EIS
+        parameter_values = parameter_values or model.default_parameter_valyes
+        parameter_values["Current function [A]"] = 0
         self.model = self.set_up_model_for_eis(model, state)
 
         # Create and build a simulation to conviniently build the model
@@ -60,6 +62,7 @@ class EISSimulation:
         solver = pybamm.BaseSolver()
         solver.set_up(self.built_model)
         y0 = self.built_model.concatenated_initial_conditions.entries
+        print(self.built_model.rhs_algebraic_eval(0, y0, []))
         self.J = self.built_model.jac_rhs_algebraic_eval(
             0, y0, []
         ).sparse()  # call the Jacobian and return a (sparse) matrix

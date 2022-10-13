@@ -99,14 +99,14 @@ models = [model, new_model]
 sols = []
 
 parameter_values = pybamm.ParameterValues("Chen2020")
-parameter_values["Current function [A]"] = 2.5
+parameter_values["Current function [A]"] = 0
 
 var_pts = {
-    "x_n": 30,  # negative electrode, normally all 30, max 100
-    "x_s": 30,
-    "x_p": 30,
-    "r_n": 30,  # each particle
-    "r_p": 30,
+    "x_n": 5,  # negative electrode, normally all 30, max 100
+    "x_s": 5,
+    "x_p": 5,
+    "r_n": 5,  # each particle
+    "r_p": 5,
 }
 
 for model in models:
@@ -129,6 +129,7 @@ sols[1].y[inds["Current density variable"], :] * I_typ
 
 model = sols[1].all_models[0]
 y0 = model.concatenated_initial_conditions.entries  # vector of initial conditions
+F = model.rhs_algebraic_eval(0, y0, [])
 J = model.jac_rhs_algebraic_eval(
     0, y0, []
 ).sparse()  #  call the Jacobian and return a (sparse) matrix
