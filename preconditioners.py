@@ -64,34 +64,34 @@ def get_block_diagonals(M, J, k):
     M_diag = []
     for i in range(m - 1):
         diag1.append(
-            csr_matrix.todense(
+            np.array(
                 J[range(i * k, (i + 1) * k), :][:, range((i + 1) * k, (i + 2) * k)]
-            ).astype("complex")
+            , dtype = 'complex')
         )
         diag2.append(
-            csr_matrix.todense(
+            np.array(
                 J[range(i * k, (i + 1) * k), :][:, range((i) * k, (i + 1) * k)]
-            ).astype("complex")
+            , dtype = 'complex')
         )
         diag3.append(
-            csr_matrix.todense(
+            np.array(
                 J[range((i + 1) * k, (i + 2) * k), :][:, range((i) * k, (i + 1) * k)]
-            ).astype("complex")
+            , dtype = 'complex')
         )
         M_diag.append(
-            csr_matrix.todense(
+            np.array(
                 M[range(i * k, (i + 1) * k), :][:, range((i) * k, (i + 1) * k)]
-            ).astype("complex")
+            , dtype = 'complex')
         )
     diag2.append(
-        csr_matrix.todense(
+        np.array(
             J[range((m - 1) * k, m * k), :][:, range((m - 1) * k, (m) * k)]
-        ).astype("complex")
+        , dtype = 'complex')
     )
     M_diag.append(
-        csr_matrix.todense(
+        np.array(
             M[range((m - 1) * k, m * k), :][:, range((m - 1) * k, (m) * k)]
-        ).astype("complex")
+        , dtype = 'complex')
     )
     return M_diag, (diag1, diag2, diag3)
 

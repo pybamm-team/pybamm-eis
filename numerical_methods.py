@@ -40,7 +40,7 @@ def conjugate_gradient(A, b, start_point=None, callback=empty, tol=1e-3):
         start_point = np.zeros_like(b)
 
     xk = np.array(start_point)  # isn't start point already an array?
-    rk = np.array(b) - A @ xk
+    rk = b - A @ xk
     pk = rk
 
     max_num_iter = len(b)
