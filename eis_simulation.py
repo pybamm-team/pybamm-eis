@@ -39,8 +39,6 @@ class EISSimulation:
         spatial_methods=None,
         state=None,
     ):
-        # TODO: pass in a starting solution to use as the current state
-
         # Set up the model for EIS
         parameter_values = parameter_values or model.default_parameter_valyes
         parameter_values["Current function [A]"] = 0
