@@ -3,7 +3,7 @@
 #
 import numpy as np
 import time
-from scipy.sparse import tril, triu, eye, csr_matrix, bmat
+from scipy.sparse import tril, triu, eye, bmat
 from scipy.sparse.linalg import splu
 
 
@@ -65,33 +65,39 @@ def get_block_diagonals(M, J, k):
     for i in range(m - 1):
         diag1.append(
             np.array(
-                J[range(i * k, (i + 1) * k), :][:, range((i + 1) * k, (i + 2) * k)]
-            , dtype = 'complex')
+                J[range(i * k, (i + 1) * k), :][:, range((i + 1) * k, (i + 2) * k)],
+                dtype="complex",
+            )
         )
         diag2.append(
             np.array(
-                J[range(i * k, (i + 1) * k), :][:, range((i) * k, (i + 1) * k)]
-            , dtype = 'complex')
+                J[range(i * k, (i + 1) * k), :][:, range((i) * k, (i + 1) * k)],
+                dtype="complex",
+            )
         )
         diag3.append(
             np.array(
-                J[range((i + 1) * k, (i + 2) * k), :][:, range((i) * k, (i + 1) * k)]
-            , dtype = 'complex')
+                J[range((i + 1) * k, (i + 2) * k), :][:, range((i) * k, (i + 1) * k)],
+                dtype="complex",
+            )
         )
         M_diag.append(
             np.array(
-                M[range(i * k, (i + 1) * k), :][:, range((i) * k, (i + 1) * k)]
-            , dtype = 'complex')
+                M[range(i * k, (i + 1) * k), :][:, range((i) * k, (i + 1) * k)],
+                dtype="complex",
+            )
         )
     diag2.append(
         np.array(
-            J[range((m - 1) * k, m * k), :][:, range((m - 1) * k, (m) * k)]
-        , dtype = 'complex')
+            J[range((m - 1) * k, m * k), :][:, range((m - 1) * k, (m) * k)],
+            dtype="complex",
+        )
     )
     M_diag.append(
         np.array(
-            M[range((m - 1) * k, m * k), :][:, range((m - 1) * k, (m) * k)]
-        , dtype = 'complex')
+            M[range((m - 1) * k, m * k), :][:, range((m - 1) * k, (m) * k)],
+            dtype="complex",
+        )
     )
     return M_diag, (diag1, diag2, diag3)
 

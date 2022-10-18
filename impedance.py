@@ -162,15 +162,15 @@ def iterative_method(
         Z = V / I
         Zs.append(Z)
 
-        #find the errors between the value of v after each iteration of
-        #bicgstab and the final value
-        
+        # find the errors between the value of v after each iteration of
+        # bicgstab and the final value
+
         es = np.abs(np.array(stored_vals) - V)
 
-        #create a list of the number of iterations. This combines with the
-        #previous to give corresponding lists with the error from the answer
-        #and the number of iterations that were subsequently taken.
-        
+        # create a list of the number of iterations. This combines with the
+        # previous to give corresponding lists with the error from the answer
+        # and the number of iterations that were subsequently taken.
+
         ns = num_iters + 1 - np.array(ns)
 
         old_c = np.array(c)

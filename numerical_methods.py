@@ -229,8 +229,6 @@ def prebicgstab(A, b, L, U=None, start_point=None, callback=empty, tol=1e-3):
     return xk
 
 
-
-
 def matrix_rescale(A, M, J, b):
     n = np.shape(M)[0]
     multiplier = np.ones(n, dtype="complex")
