@@ -59,15 +59,16 @@ class EISSimulation:
         # Construct matrix problem
         solver = pybamm.BaseSolver()
         solver.set_up(self.built_model)
+        self.M = self.built_model.mass_matrix.entries
         self.y0 = self.built_model.concatenated_initial_conditions.entries
         self.J = self.built_model.jac_rhs_algebraic_eval(
             0, self.y0, []
         ).sparse()  # call the Jacobian and return a (sparse) matrix
-        self.M = self.built_model.mass_matrix.entries
         # Forcing on the current density variable, which is the
         # final entry by construction.
         self.b = np.zeros_like(self.y0)
         self.b[-1] = -1
+        # Store time and current scales
         self.timescale = self.built_model.timescale_eval
         self.current_scale = sim.parameter_values.evaluate(model.param.I_typ)
 

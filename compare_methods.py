@@ -7,12 +7,11 @@ from plotting import nyquist_plot
 from scipy.fft import fft
 
 # Set up
-model = pybamm.lithium_ion.SPMe(options={"surface form": "differential"})
+model = pybamm.lithium_ion.SPM(options={"surface form": "differential"})
 
 parameter_values = pybamm.ParameterValues("Chen2020")
 
 frequencies = np.logspace(-4, 2, 30)
-# frequencies = [10]
 
 # Time domain
 I = 50 * 1e-3
@@ -45,7 +44,7 @@ for frequency in frequencies:
     voltage = sol["Terminal voltage [V]"].entries[-3 * samples_per_period - 1 :]
     # FFT
     current_fft = fft(current)
-    voltage_fft = fft(voltage - sol["Terminal voltage [V]"].entries[0])
+    voltage_fft = fft(voltage)
     # Get index of first harmonic
     idx = np.argmax(np.abs(current_fft))
     impedance = -voltage_fft[idx] / current_fft[idx]
@@ -59,8 +58,8 @@ for frequency in frequencies:
         ax[0, 1].plot(time, voltage)
         ax[1, 0].plot(x, np.abs(current_fft))
         ax[1, 1].plot(x, np.abs(voltage_fft))
-        ax[1, 0].set_xlim([0, frequency * 4])
-        ax[1, 1].set_xlim([0, frequency * 4])
+        ax[1, 0].set_xlim([0, frequency * 3])
+        ax[1, 1].set_xlim([0, frequency * 3])
         plt.show()
 
 end_time = timer.time()
