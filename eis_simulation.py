@@ -24,9 +24,6 @@ class EISSimulation:
     spatial_methods: dict (optional)
         A dictionary of the types of spatial method to use on each
         domain (e.g. pybamm.FiniteVolume)
-    state : :class:`pybamm.Solution`, optional
-        The solution to use as the current state. If None (default)
-        `model.concatenated_initial_conditions` is used as the current state.
     """
 
     def __init__(
@@ -37,14 +34,13 @@ class EISSimulation:
         submesh_types=None,
         var_pts=None,
         spatial_methods=None,
-        state=None,
     ):
         # Set up the model for EIS
-        parameter_values = parameter_values or model.default_parameter_valyes
-        parameter_values["Current function [A]"] = 0
-        self.model = self.set_up_model_for_eis(model, state)
+        self.model = self.set_up_model_for_eis(model)
 
         # Create and build a simulation to conviniently build the model
+        parameter_values = parameter_values or model.default_parameter_values
+        parameter_values["Current function [A]"] = 0
         sim = pybamm.Simulation(
             self.model,
             geometry=geometry,
@@ -56,7 +52,7 @@ class EISSimulation:
         sim.build()
         self.built_model = sim.built_model
 
-        # Construct matrix problem
+        # Extract mass matrix and Jacobian
         solver = pybamm.BaseSolver()
         solver.set_up(self.built_model)
         self.M = self.built_model.mass_matrix.entries
@@ -64,15 +60,15 @@ class EISSimulation:
         self.J = self.built_model.jac_rhs_algebraic_eval(
             0, self.y0, []
         ).sparse()  # call the Jacobian and return a (sparse) matrix
-        # Forcing on the current density variable, which is the
-        # final entry by construction.
+        # Add forcing on the current density variable, which is the
+        # final entry by construction
         self.b = np.zeros_like(self.y0)
         self.b[-1] = -1
         # Store time and current scales
         self.timescale = self.built_model.timescale_eval
         self.current_scale = sim.parameter_values.evaluate(model.param.I_typ)
 
-    def set_up_model_for_eis(self, model, state):
+    def set_up_model_for_eis(self, model):
         """
         Set up model so that current and voltage are states.
         This formulation is suitable for EIS calculations in
@@ -82,17 +78,11 @@ class EISSimulation:
         ----------
         model : :class:`pybamm.BaseModel`
             Model to set up for EIS.
-        state : :class:`pybamm.Solution`, optional
-            The solution to use as the current state. If None (default)
-            `model.concatenated_initial_conditions` is used as the current state.
         """
         pybamm.logger.info("Start setting up {} for EIS".format(model.name))
 
-        # Update initial conditions to use given state or create a copy of the model
-        if state:
-            new_model = model.set_initial_conditions_from(state, inplace=False)
-        else:
-            new_model = model.new_copy()
+        # Make a new copy of the model
+        new_model = model.new_copy()
 
         # Create a voltage variable
         V_cell = pybamm.Variable("Terminal voltage variable")
@@ -100,12 +90,9 @@ class EISSimulation:
         V = new_model.variables["Terminal voltage [V]"]
         # Add an algebraic equation for the voltage variable
         new_model.algebraic[V_cell] = V_cell - V
-        # Update the initial conditions
-        if state:
-            voltage_ic = state["Terminal voltage [V]"].entries[-1]
-        else:
-            voltage_ic = new_model.param.p.U_ref - new_model.param.n.U_ref
-        new_model.initial_conditions[V_cell] = voltage_ic
+        new_model.initial_conditions[V_cell] = (
+            new_model.param.p.U_ref - new_model.param.n.U_ref
+        )
 
         # Now make current density a variable
         # To do so, we replace all instances of the current density in the
@@ -184,9 +171,9 @@ class EISSimulation:
                 # include the current scale from the model to get the actual current
                 z = -x[-2][0] / x[-1][0] / self.current_scale
                 impedances.append(z)
-
-            self.solution = np.array(impedances)
         else:
             raise NotImplementedError("'method' must be 'direct'.")
+
+        self.solution = np.array(impedances)
 
         return self.solution
