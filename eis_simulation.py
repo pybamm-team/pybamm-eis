@@ -2,7 +2,9 @@ import pybamm
 import numpy as np
 from scipy.sparse.linalg import splu
 from scipy.sparse import csc_matrix
-
+import numerical_methods as nm
+import preconditioners
+import time
 
 class EISSimulation:
     """
@@ -171,9 +173,162 @@ class EISSimulation:
                 # include the current scale from the model to get the actual current
                 z = -x[-2][0] / x[-1][0] / self.current_scale
                 impedances.append(z)
+        elif method == "prebicgstab":
+            impedances, frequencies = self.iterative_method(frequencies)
+        elif method == "bicgstab":
+            impedances, frequencies = self.iterative_method(frequencies, method = "bicgstab")
+        elif method == "cg":
+            impedances, frequencies = self.iterative_method(frequencies, method = "cg")
         else:
             raise NotImplementedError("'method' must be 'direct'.")
 
         self.solution = np.array(impedances)
 
         return self.solution
+
+    def iterative_method(
+        self, frequencies, method="prebicgstab", preconditioner=preconditioners.ELU
+    ):
+        """
+        Compute the impedance at the given frequencies by solving problem
+
+        .. math::
+            i \omega \tau M x = J x + b
+
+        using an iterative method, where i is the imagianary unit, \omega 
+        is the frequency, \tau is the model timescale, M is the mass matrix,
+        J is the Jacobian, x is the state vector, and b gives a periodic 
+        forcing in the current.
+    
+        Parameters
+        ----------
+        frequencies : array-like
+            The frequencies at which to compute the impedance.
+        method : str, optional
+            The method used to calculate the impedance. Can be:
+            'cg' - conjugate gradient - only use for Hermitian matrices
+            'bicgstab' - use bicgstab with no preconditioner
+            'prebicgstab' - use bicgstab with a preconditioner, this is the
+            default.
+        preconditioner: function, optional
+            A function that calculates a preconditioner from A, M, J and the previous
+            preconditioner. Returns L, U, triangular. Only relevent when using prebicgstab.
+            Default is ELU (which is normally the best). Return None for U if only L is
+            being used.
+    
+        Returns
+        -------
+        solution : array-like
+            The impedances at the given frequencies.
+        ws : list
+            Frequencies evaluated at.
+    
+        """
+        start_freq = frequencies[0]
+        end_freq = frequencies[-1]
+        num_points = len(frequencies)
+    
+        solution = []
+        ws = []
+        w = start_freq
+    
+        L = None
+        U = None
+        LUt = 0
+        t = 1
+        
+        M = csc_matrix(self.M)
+        J = csc_matrix(self.J)
+        
+        start_point = np.array(self.b)
+    
+        w_log_increment_max = (np.log(end_freq) - np.log(start_freq)) / num_points
+        iters = []
+        while w <= end_freq:
+            A = 1.0j * 2 * np.pi * w * self.timescale * M - J
+            num_iters = 0
+            stored_vals = []
+            ns = []
+    
+            if method == "prebicgstab":
+                et = time.process_time()
+                try:
+                    t = et - st
+                except:
+                    pass
+            
+
+                if LUt <= t:
+                    LUstart_time = time.process_time()
+                    L = splu(A)
+                    start_point = L.solve(self.b)
+                    LUt = time.process_time() - LUstart_time
+            
+                st = time.process_time()
+    
+            def callback(xk):
+                nonlocal num_iters
+                num_iters += 1
+                stored_vals.append(xk[-1])
+                ns.append(num_iters)
+    
+            if method == "bicgstab":
+                c = nm.bicgstab(A, self.b, start_point=start_point, callback=callback)
+            elif method == "prebicgstab":
+                c = nm.prebicgstab(A, self.b, L, U, start_point=start_point, callback=callback)
+            else:
+                c = nm.conjugate_gradient(A, self.b, start_point=start_point, callback=callback)
+    
+            V = c[-2]
+            I = c[-1]
+            Z = V / I
+            solution.append(Z)
+    
+            # find the errors between the value of v after each iteration of
+            # bicgstab and the final value
+    
+            es = np.abs(np.array(stored_vals) - V)
+    
+            # create a list of the number of iterations. This combines with the
+            # previous to give corresponding lists with the error from the answer
+            # and the number of iterations that were subsequently taken.
+    
+            ns = num_iters + 1 - np.array(ns)
+    
+            old_c = np.array(c)
+            if len(solution) == 1:
+                w_log_increment = float(w_log_increment_max)
+                start_point = c
+            else:
+                old_increment = float(w_log_increment)
+                kappa = np.abs(V - start_point[-2]) / w_log_increment**2
+                if kappa == 0: kappa = 0.001
+                ys = []
+                for j, e in enumerate(es):
+                    y = (
+                        2
+                        * ns[j]
+                        / (
+                            -w_log_increment
+                            + np.sqrt((w_log_increment) ** 2 + 4 * (e + 0.01) / kappa)
+                        )
+                    )
+                    ys.append(y)
+                y_min = min(ys)
+                if ys[-1] == y_min:
+                    n_val = ns[-1] + 1
+                    w_log_increment = min(n_val / y_min[0], w_log_increment_max)
+                else:
+                    w_log_increment = min(
+                        ns[ys.index(y_min)] / y_min[0], w_log_increment_max
+                    )
+    
+                start_point = c + w_log_increment / old_increment * (c - old_c)
+    
+            multiplier = np.exp(w_log_increment)
+    
+            ws.append(w)
+            iters.append(num_iters)
+    
+            w = w * multiplier
+        return solution, ws

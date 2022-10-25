@@ -69,7 +69,7 @@ print("Time domain method: ", time_elapsed, "s")
 # Frequency domain
 start_time = timer.time()
 eis_sim = EISSimulation(model, parameter_values=parameter_values)
-impedances_freq = eis_sim.solve(frequencies)
+impedances_freq = eis_sim.solve(frequencies, 'prebicgstab')
 end_time = timer.time()
 time_elapsed = end_time - start_time
 print("Frequency domain method: ", time_elapsed, "s")

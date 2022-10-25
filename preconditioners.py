@@ -308,23 +308,8 @@ def ELU(A, M, J, L, U, b):
     U : String
         A return just to fill the space for U
     """
-    global start_point, st, LUt
 
-    et = time.time()
-
-    try:
-        t = et - st
-    except:
-        pass
-
-    if type(L) == str or LUt <= t:
-        LUstart_time = time.time()
-        L = splu(A.tocsc())
-        start_point = L.solve(b)
-        U = None
-        LUend_time = time.time()
-        LUt = LUend_time - LUstart_time
-
-    st = time.time()
+    L = splu(A)
+    U = None
 
     return L, U
