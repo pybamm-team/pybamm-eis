@@ -272,7 +272,7 @@ class EISSimulation:
                 c = nm.prebicgstab(
                     A, self.b, L, U, start_point=start_point, callback=callback
                 )
-            else:
+            elif method == "cg":
                 c = nm.conjugate_gradient(
                     A, self.b, start_point=start_point, callback=callback
                 )
