@@ -2,7 +2,6 @@
 # Preconditioners
 #
 import numpy as np
-import time
 from scipy.sparse import tril, triu, eye, bmat
 from scipy.sparse.linalg import splu
 
@@ -200,7 +199,7 @@ def ILU(A, M, J, L, U, b=None):
     """
     if type(L) == str:
         k = get_k(M)
-        M_diags, A_diags = get_block_diagonals(M, A, k)
+        _, A_diags = get_block_diagonals(M, A, k)
 
         L, U = ILUpreconditioner(A_diags[0], A_diags[1], A_diags[2])
     return L, U

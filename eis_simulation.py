@@ -6,6 +6,7 @@ import numerical_methods as nm
 import preconditioners
 import time
 
+
 class EISSimulation:
     """
     A Simulation class for easy building and running of PyBaMM EIS simulations
@@ -57,11 +58,14 @@ class EISSimulation:
         # Extract mass matrix and Jacobian
         solver = pybamm.BaseSolver()
         solver.set_up(self.built_model)
-        self.M = self.built_model.mass_matrix.entries
+        M = self.built_model.mass_matrix.entries
         self.y0 = self.built_model.concatenated_initial_conditions.entries
-        self.J = self.built_model.jac_rhs_algebraic_eval(
+        J = self.built_model.jac_rhs_algebraic_eval(
             0, self.y0, []
         ).sparse()  # call the Jacobian and return a (sparse) matrix
+        # Convert to csc for efficiency in later methods
+        self.M = csc_matrix(M)
+        self.J = csc_matrix(J)
         # Add forcing on the current density variable, which is the
         # final entry by construction
         self.b = np.zeros_like(self.y0)
@@ -148,8 +152,8 @@ class EISSimulation:
         frequencies : array-like
             The frequencies at which to compute the impedance.
         method : str, optional
-            The method used to calculate the impedance. Can be 'direct'.
-            Default is 'direct'.
+            The method used to calculate the impedance. Can be 'direct', 'prebicgstab',
+            'bicgstab' or 'cg'. Default is 'direct'.
 
         Returns
         -------
@@ -157,32 +161,27 @@ class EISSimulation:
             The impedances at the given frequencies.
         """
 
-        # TODO: add other methods
         if method == "direct":
-            # Convert to csc for efficiency
-            M = csc_matrix(self.M)
-            J = csc_matrix(self.J)
             impedances = []
             for frequency in frequencies:
-                A = 1.0j * 2 * np.pi * frequency * self.timescale * M - J
+                A = 1.0j * 2 * np.pi * frequency * self.timescale * self.M - self.J
                 lu = splu(A)
                 x = lu.solve(self.b)
                 # The model is set up such that the voltage is the penultimate
                 # entry and the current density variable is the final entry
-                # Note: current density variable is dimensionless so we need
-                # include the current scale from the model to get the actual current
-                z = -x[-2][0] / x[-1][0] / self.current_scale
+                z = -x[-2][0] / x[-1][0]
                 impedances.append(z)
-        elif method == "prebicgstab":
-            impedances, frequencies = self.iterative_method(frequencies)
-        elif method == "bicgstab":
-            impedances, frequencies = self.iterative_method(frequencies, method = "bicgstab")
-        elif method == "cg":
-            impedances, frequencies = self.iterative_method(frequencies, method = "cg")
+        elif method in ["prebicgstab", "bicgstab", "cg"]:
+            impedances, frequencies = self.iterative_method(frequencies, method=method)
         else:
-            raise NotImplementedError("'method' must be 'direct'.")
+            raise NotImplementedError(
+                "'method' must be 'direct', 'prebicgstab', 'bicgstab' or 'cg', ",
+                f"but is '{method}'",
+            )
 
-        self.solution = np.array(impedances)
+        # Note: the current density variable is dimensionless so we need
+        # to scale by the current scale from the model to get true impedance
+        self.solution = np.array(impedances) / self.current_scale
 
         return self.solution
 
@@ -195,11 +194,11 @@ class EISSimulation:
         .. math::
             i \omega \tau M x = J x + b
 
-        using an iterative method, where i is the imagianary unit, \omega 
+        using an iterative method, where i is the imagianary unit, \omega
         is the frequency, \tau is the model timescale, M is the mass matrix,
-        J is the Jacobian, x is the state vector, and b gives a periodic 
+        J is the Jacobian, x is the state vector, and b gives a periodic
         forcing in the current.
-    
+
         Parameters
         ----------
         frequencies : array-like
@@ -215,86 +214,85 @@ class EISSimulation:
             preconditioner. Returns L, U, triangular. Only relevent when using prebicgstab.
             Default is ELU (which is normally the best). Return None for U if only L is
             being used.
-    
+
         Returns
         -------
         solution : array-like
             The impedances at the given frequencies.
         ws : list
             Frequencies evaluated at.
-    
+
         """
         start_freq = frequencies[0]
         end_freq = frequencies[-1]
         num_points = len(frequencies)
-    
+
         solution = []
         ws = []
         w = start_freq
-    
+
         L = None
         U = None
         LUt = 0
         t = 1
-        
-        M = csc_matrix(self.M)
-        J = csc_matrix(self.J)
-        
-        start_point = np.array(self.b)
-    
+        st = None
+
+        start_point = self.b
+
         w_log_increment_max = (np.log(end_freq) - np.log(start_freq)) / num_points
         iters = []
         while w <= end_freq:
-            A = 1.0j * 2 * np.pi * w * self.timescale * M - J
+            A = 1.0j * 2 * np.pi * w * self.timescale * self.M - self.J
             num_iters = 0
             stored_vals = []
             ns = []
-    
+
             if method == "prebicgstab":
                 et = time.process_time()
-                try:
+                if st:
                     t = et - st
-                except:
-                    pass
-            
 
                 if LUt <= t:
                     LUstart_time = time.process_time()
                     L = splu(A)
                     start_point = L.solve(self.b)
                     LUt = time.process_time() - LUstart_time
-            
+
                 st = time.process_time()
-    
+
             def callback(xk):
                 nonlocal num_iters
                 num_iters += 1
                 stored_vals.append(xk[-1])
                 ns.append(num_iters)
-    
+
             if method == "bicgstab":
                 c = nm.bicgstab(A, self.b, start_point=start_point, callback=callback)
             elif method == "prebicgstab":
-                c = nm.prebicgstab(A, self.b, L, U, start_point=start_point, callback=callback)
+                c = nm.prebicgstab(
+                    A, self.b, L, U, start_point=start_point, callback=callback
+                )
             else:
-                c = nm.conjugate_gradient(A, self.b, start_point=start_point, callback=callback)
-    
+                c = nm.conjugate_gradient(
+                    A, self.b, start_point=start_point, callback=callback
+                )
+
+            # The model is set up such that the voltage is the penultimate
+            # entry and the current density variable is the final entry
             V = c[-2]
             I = c[-1]
-            Z = V / I
+            Z = -V / I
             solution.append(Z)
-    
+
             # find the errors between the value of v after each iteration of
             # bicgstab and the final value
-    
             es = np.abs(np.array(stored_vals) - V)
-    
+
             # create a list of the number of iterations. This combines with the
             # previous to give corresponding lists with the error from the answer
             # and the number of iterations that were subsequently taken.
-    
             ns = num_iters + 1 - np.array(ns)
-    
+
             old_c = np.array(c)
             if len(solution) == 1:
                 w_log_increment = float(w_log_increment_max)
@@ -302,7 +300,8 @@ class EISSimulation:
             else:
                 old_increment = float(w_log_increment)
                 kappa = np.abs(V - start_point[-2]) / w_log_increment**2
-                if kappa == 0: kappa = 0.001
+                if kappa == 0:
+                    kappa = 0.001
                 ys = []
                 for j, e in enumerate(es):
                     y = (
@@ -322,13 +321,13 @@ class EISSimulation:
                     w_log_increment = min(
                         ns[ys.index(y_min)] / y_min[0], w_log_increment_max
                     )
-    
+
                 start_point = c + w_log_increment / old_increment * (c - old_c)
-    
+
             multiplier = np.exp(w_log_increment)
-    
+
             ws.append(w)
             iters.append(num_iters)
-    
+
             w = w * multiplier
         return solution, ws

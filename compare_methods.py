@@ -67,16 +67,21 @@ time_elapsed = end_time - start_time
 print("Time domain method: ", time_elapsed, "s")
 
 # Frequency domain
-start_time = timer.time()
-eis_sim = EISSimulation(model, parameter_values=parameter_values)
-impedances_freq = eis_sim.solve(frequencies, 'prebicgstab')
-end_time = timer.time()
-time_elapsed = end_time - start_time
-print("Frequency domain method: ", time_elapsed, "s")
+methods = ["direct", "prebicgstab"]
+impedances_freqs = []
+for method in methods:
+    start_time = timer.time()
+    eis_sim = EISSimulation(model, parameter_values=parameter_values)
+    impedances_freq = eis_sim.solve(frequencies, "prebicgstab")
+    end_time = timer.time()
+    time_elapsed = end_time - start_time
+    print(f"Frequency domain ({method}): ", time_elapsed, "s")
+    impedances_freqs.append(impedances_freq)
 
 # Compare
 _, ax = plt.subplots()
 ax = nyquist_plot(impedances_time, ax=ax, label="Time")
-ax = nyquist_plot(impedances_freq, ax=ax, label="Frequency")
+for i, method in enumerate(methods):
+    ax = nyquist_plot(impedances_freqs[i], ax=ax, label=f"Frequency ({method})")
 ax.legend()
 plt.show()
