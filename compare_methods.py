@@ -7,9 +7,9 @@ from plotting import nyquist_plot
 from scipy.fft import fft
 
 # Set up
-model = pybamm.lithium_ion.SPM(options={"surface form": "differential"})
+model = pybamm.lithium_ion.SPM(options={"surface form": "differential"}, name="SPM")
 
-parameter_values = pybamm.ParameterValues("Chen2020")
+parameter_values = pybamm.ParameterValues("Marquis2019")
 
 frequencies = np.logspace(-4, 2, 30)
 
@@ -34,6 +34,7 @@ sim = pybamm.Simulation(
 
 impedances_time = []
 for frequency in frequencies:
+    # Solve
     period = 1 / frequency
     dt = period / samples_per_period
     t_eval = np.array(range(0, 1 + samples_per_period * number_of_periods)) * dt
@@ -51,7 +52,6 @@ for frequency in frequencies:
     impedances_time.append(impedance)
     # Plot
     if plot:
-        # sol.plot(["Current [A]", "Terminal voltage [V]"])
         x = np.linspace(0, 1 / dt, len(current_fft))
         _, ax = plt.subplots(2, 2)
         ax[0, 0].plot(time, current)
@@ -72,7 +72,7 @@ impedances_freqs = []
 for method in methods:
     start_time = timer.time()
     eis_sim = EISSimulation(model, parameter_values=parameter_values)
-    impedances_freq = eis_sim.solve(frequencies, "prebicgstab")
+    impedances_freq = eis_sim.solve(frequencies, method)
     end_time = timer.time()
     time_elapsed = end_time - start_time
     print(f"Frequency domain ({method}): ", time_elapsed, "s")
@@ -80,8 +80,12 @@ for method in methods:
 
 # Compare
 _, ax = plt.subplots()
-ax = nyquist_plot(impedances_time, ax=ax, label="Time")
+ax = nyquist_plot(impedances_time, ax=ax, label="Time", alpha=0.7)
 for i, method in enumerate(methods):
-    ax = nyquist_plot(impedances_freqs[i], ax=ax, label=f"Frequency ({method})")
+    ax = nyquist_plot(
+        impedances_freqs[i], ax=ax, label=f"Frequency ({method})", alpha=0.7
+    )
 ax.legend()
+plt.suptitle(f"{model.name}")
+plt.savefig(f"figures/{model.name}_time_vs_freq.pdf", dpi=300)
 plt.show()
