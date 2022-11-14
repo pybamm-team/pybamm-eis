@@ -25,7 +25,7 @@ parameter_values = pybamm.get_size_distribution_parameters(
 )
 
 # Loop over models and calculate impedance
-frequencies = np.logspace(-4, 2, 30)
+frequencies = np.logspace(-4, 4, 30)
 impedances = []
 for model in models:
     start_time = timer.time()
