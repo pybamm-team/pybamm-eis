@@ -1,10 +1,11 @@
 import pybamm
 import numpy as np
-from scipy.sparse.linalg import splu
-from scipy.sparse import csc_matrix
 import numerical_methods as nm
 import preconditioners
 import time
+from scipy.sparse.linalg import splu
+from scipy.sparse import csc_matrix
+from utils import SymbolReplacer
 
 
 class EISSimulation:
@@ -117,7 +118,7 @@ class EISSimulation:
         }
         # Don't replace initial conditions, as these should not contain
         # Variable objects
-        replacer = pybamm.SymbolReplacer(
+        replacer = SymbolReplacer(
             symbol_replacement_map, process_initial_conditions=False
         )
         replacer.process_model(new_model, inplace=True)
@@ -162,7 +163,7 @@ class EISSimulation:
         """
 
         if method == "direct":
-            impedances = []
+            zs = []
             for frequency in frequencies:
                 A = 1.0j * 2 * np.pi * frequency * self.timescale * self.M - self.J
                 lu = splu(A)
@@ -170,9 +171,9 @@ class EISSimulation:
                 # The model is set up such that the voltage is the penultimate
                 # entry and the current density variable is the final entry
                 z = -x[-2][0] / x[-1][0]
-                impedances.append(z)
+                zs.append(z)
         elif method in ["prebicgstab", "bicgstab", "cg"]:
-            impedances, frequencies = self.iterative_method(frequencies, method=method)
+            zs, frequencies = self.iterative_method(frequencies, method=method)
         else:
             raise NotImplementedError(
                 "'method' must be 'direct', 'prebicgstab', 'bicgstab' or 'cg', ",
@@ -181,7 +182,7 @@ class EISSimulation:
 
         # Note: the current density variable is dimensionless so we need
         # to scale by the current scale from the model to get true impedance
-        self.solution = np.array(impedances) / self.current_scale
+        self.solution = np.array(zs) / self.current_scale
 
         return self.solution
 
