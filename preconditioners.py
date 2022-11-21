@@ -2,7 +2,6 @@
 # Preconditioners
 #
 import numpy as np
-import time
 from scipy.sparse import tril, triu, eye, bmat
 from scipy.sparse.linalg import splu
 
@@ -200,7 +199,7 @@ def ILU(A, M, J, L, U, b=None):
     """
     if type(L) == str:
         k = get_k(M)
-        M_diags, A_diags = get_block_diagonals(M, A, k)
+        _, A_diags = get_block_diagonals(M, A, k)
 
         L, U = ILUpreconditioner(A_diags[0], A_diags[1], A_diags[2])
     return L, U
@@ -308,23 +307,8 @@ def ELU(A, M, J, L, U, b):
     U : String
         A return just to fill the space for U
     """
-    global start_point, st, LUt
 
-    et = time.time()
-
-    try:
-        t = et - st
-    except:
-        pass
-
-    if type(L) == str or LUt <= t:
-        LUstart_time = time.time()
-        L = splu(A.tocsc())
-        start_point = L.solve(b)
-        U = None
-        LUend_time = time.time()
-        LUt = LUend_time - LUstart_time
-
-    st = time.time()
+    L = splu(A)
+    U = None
 
     return L, U
