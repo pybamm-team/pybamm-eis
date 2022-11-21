@@ -8,6 +8,7 @@ from plotting import nyquist_plot
 # Load models and parameters
 models = [
     pybamm.lithium_ion.SPM(options={"surface form": "differential"}, name="SPM"),
+    pybamm.lithium_ion.SPMe(options={"surface form": "differential"}, name="SPMe"),
     pybamm.lithium_ion.MPM(options={"surface form": "algebraic"}, name="MPM"),
     pybamm.lithium_ion.DFN(options={"surface form": "differential"}, name="DFN"),
     pybamm.lithium_ion.SPMe(
@@ -17,6 +18,14 @@ models = [
             "dimensionality": 2,
         },
         name="SPMePouch",
+    ),
+    pybamm.lithium_ion.DFN(
+        {
+            "surface form": "differential",
+            "current collector": "potential pair",
+            "dimensionality": 2,
+        },
+        name="DFNPouch",
     ),
 ]
 parameter_values = pybamm.ParameterValues("Marquis2019")
