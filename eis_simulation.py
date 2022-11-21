@@ -226,12 +226,12 @@ class EISSimulation:
         """
         start_freq = frequencies[0]
         end_freq = frequencies[-1]
-        num_points = len(frequencies)
 
         solution = []
         ws = []
         w = start_freq
-
+        next_freq_pos = 1
+        
         L = None
         U = None
         LUt = 0
@@ -240,9 +240,13 @@ class EISSimulation:
 
         start_point = self.b
 
-        w_log_increment_max = (np.log(end_freq) - np.log(start_freq)) / num_points
+        
         iters = []
         while w <= end_freq:
+            if w >= 0.99*frequencies[next_freq_pos]:
+                next_freq_pos += 1
+            
+            w_log_increment_max = np.log(frequencies[next_freq_pos]) - np.log(w)
             A = 1.0j * 2 * np.pi * w * self.timescale * self.M - self.J
             num_iters = 0
             stored_vals = []
