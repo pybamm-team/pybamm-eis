@@ -63,13 +63,17 @@ https://github.com/rish31415/pybamm-eis
 ```bash
 cd pybamm-eis
 ```
-3. Activate the virtual environment 
+3. Create a virtual environment
+```bash
+python -m virtualenv env
+```
+4. Activate the virtual environment 
 ```bash
 \path\to\env\Scripts\activate
 ```
-where `\path\to\env` is the path to the environment created in step 2 (e.g. `C:\Users\'Username'\env\Scripts\activate.bat`).
+where `\path\to\env` is the path to the environment created in step 3 (e.g. `C:\Users\'Username'\env\Scripts\activate.bat`).
 
-4. Install the `pbeis` package
+5. Install the `pbeis` package
 ```bash 
 pip install .
 ```
