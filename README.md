@@ -2,7 +2,7 @@
 PyBaMM EIS rapidly calculates the electrochemical impedance of any battery model defined using PyBaMM.
 
 
-This code was developed as part of the Oxford Mathematics Summer Project "Efficient Linear Algebra Methods to Determine Li-ion Battery Behaviour". 
+This code was developed as part of the Oxford Mathematics Summer Project _"Efficient Linear Algebra Methods to Determine Li-ion Battery Behaviour"_. 
 
 Student: Rishit Dhoot
 
