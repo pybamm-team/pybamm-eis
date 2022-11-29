@@ -9,6 +9,16 @@ Student: Rishit Dhoot
 Supervisors: Prof Colin Please and Dr. Robert Timms
 
 ## 🔋 Using PyBaMM EIS
+The easiest way to use PyBaMM EIS is to compute the impedance of a model of your choice with all the default settings:
+```python3
+import pbeis
+import pybamm
+
+model = pybamm.lithium_ion.DFN(options={"surface form": "differential"})  # DFN with capacitance
+eis_sim = pbeis.EISSimulation(model)
+eis_sim.solve( pbeis.logspace(-4, 4, 30))  # calculate impedance at log-spaced frequencies
+eis_sim.nyquist_plot()
+```
 
 ## 💻 About PyBaMM
 The example simulations use the package [PyBaMM](www.pybamm.org) (Python Battery Mathematical Modelling). PyBaMM solves physics-based electrochemical DAE models by using state-of-the-art automatic differentiation and numerical solvers. The Doyle-Fuller-Newman model can be solved in under 0.1 seconds, while the reduced-order Single Particle Model and Single Particle Model with electrolyte can be solved in just a few milliseconds. Additional physics can easily be included such as thermal effects, fast particle diffusion, 3D effects, and more. All models are implemented in a flexible manner, and a wide range of models and parameter sets (NCA, NMC, LiCoO2, ...) are available. There is also functionality to simulate any set of experimental instructions, such as CCCV or GITT, or specify drive cycles.
@@ -39,7 +49,7 @@ source env/bin/activate
 ```
 5. Install the required packages
 ```bash 
-pip install -r requirements.txt
+pip install .
 ```
 
 ### Windows
@@ -61,10 +71,17 @@ where `\path\to\env` is the path to the environment created in step 2 (e.g. `C:\
 
 4. Install the required packages
 ```bash 
-pip install -r requirements.txt
+pip install .
 ```
 
 As an alternative, you can set up [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/about). This allows you to run a full Linux distribution within Windows.
+
+### Developer 
+To install as a developer follow the instructions above, replacing the final step with 
+```bash
+pip install -e .
+```
+This will allow you to edit the code locally.
 
 ## 📫 Get in touch
 If you have any questions, or would like to know more about the project, please get in touch via email <timms@maths.ox.ac.uk>.

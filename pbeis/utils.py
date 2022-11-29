@@ -2,6 +2,7 @@
 # Replace a symbol
 #
 import pybamm
+import numpy as np
 
 
 class SymbolReplacer(object):
@@ -208,3 +209,24 @@ class SymbolReplacer(object):
             # In this case, since we have already ruled out that the symbol is one of
             # the symbols that needs to be replaced, we can just return the symbol
             return symbol
+
+
+def logspace(start, stop, num=50, **kwargs):
+    """
+    Return numbers spaced evenly on a log scale. Calls numpy.logspace`
+    with keyword arguments 'kwargs'. For a list of 'kwargs' see the
+    `matplotlib plot documentation <https://tinyurl.com/4m3aj3m2>`_
+
+    Parameters
+    ----------
+    start : array_like
+        ``base ** start`` is the starting value of the sequence.
+    stop : array_like
+        ``base ** stop`` is the final value of the sequence, unless `endpoint`
+        is False.  In that case, ``num + 1`` values are spaced over the
+        interval in log-space, of which all but the last (a sequence of
+        length `num`) are returned.
+    num : integer, optional
+        Number of samples to generate.  Default is 50.
+    """
+    return np.logspace(start, stop, num, **kwargs)

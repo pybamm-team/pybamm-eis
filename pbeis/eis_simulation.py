@@ -1,12 +1,9 @@
 import pybamm
+import pbeis
 import numpy as np
-import numerical_methods as nm
-import preconditioners
 import time
 from scipy.sparse.linalg import splu
 from scipy.sparse import csc_matrix
-from utils import SymbolReplacer
-from plotting import nyquist_plot
 
 
 class EISSimulation:
@@ -131,7 +128,7 @@ class EISSimulation:
         }
         # Don't replace initial conditions, as these should not contain
         # Variable objects
-        replacer = SymbolReplacer(
+        replacer = pbeis.SymbolReplacer(
             symbol_replacement_map, process_initial_conditions=False
         )
         replacer.process_model(new_model, inplace=True)
@@ -207,9 +204,7 @@ class EISSimulation:
 
         return self.solution
 
-    def iterative_method(
-        self, frequencies, method="prebicgstab", preconditioner=preconditioners.ELU
-    ):
+    def iterative_method(self, frequencies, method="prebicgstab"):
         """
         Compute the impedance at the given frequencies by solving problem
 
@@ -229,14 +224,8 @@ class EISSimulation:
             The method used to calculate the impedance. Can be:
             'cg' - conjugate gradient - only use for Hermitian matrices
             'bicgstab' - use bicgstab with no preconditioner
-            'prebicgstab' - use bicgstab with a preconditioner, this is the
-            default.
-        preconditioner: function, optional
-            A function that calculates a preconditioner from A, M, J and the previous
-            preconditioner. Returns L, U, triangular. Only relevent when using prebicgstab.
-            Default is ELU (which is normally the best). Return None for U if only L is
-            being used.
-
+            'prebicgstab' - use bicgstab with a preconditioner, this is
+            the default.
         Returns
         -------
         solution : array-like
@@ -292,13 +281,15 @@ class EISSimulation:
                 ns.append(num_iters)
 
             if method == "bicgstab":
-                c = nm.bicgstab(A, self.b, start_point=start_point, callback=callback)
+                c = pbeis.bicgstab(
+                    A, self.b, start_point=start_point, callback=callback
+                )
             elif method == "prebicgstab":
-                c = nm.prebicgstab(
+                c = pbeis.prebicgstab(
                     A, self.b, L, U, start_point=start_point, callback=callback
                 )
             elif method == "cg":
-                c = nm.conjugate_gradient(
+                c = pbeis.conjugate_gradient(
                     A, self.b, start_point=start_point, callback=callback
                 )
 
@@ -374,6 +365,6 @@ class EISSimulation:
         kwargs
             Keyword arguments, passed to plt.scatter.
         """
-        return nyquist_plot(
+        return pbeis.nyquist_plot(
             self.solution, ax=None, marker="o", linestyle="None", **kwargs
         )

@@ -1,8 +1,6 @@
+import pbeis
 import pybamm
-import numpy as np
 import matplotlib.pyplot as plt
-from eis_simulation import EISSimulation
-from plotting import nyquist_plot
 
 # Load models and parameters
 models = [
@@ -33,11 +31,11 @@ parameter_values = pybamm.get_size_distribution_parameters(
 )
 
 # Loop over models and calculate impedance
-frequencies = np.logspace(-4, 4, 30)
+frequencies = pbeis.logspace(-4, 4, 30)
 impedances = []
 for model in models:
     print(f"Start calculating impedance for {model.name}")
-    eis_sim = EISSimulation(model, parameter_values=parameter_values)
+    eis_sim = pbeis.EISSimulation(model, parameter_values=parameter_values)
     impedances_freq = eis_sim.solve(
         frequencies,
     )
@@ -48,14 +46,14 @@ for model in models:
 # Plot individually
 for i, model in enumerate(models):
     _, ax = plt.subplots()
-    ax = nyquist_plot(impedances[i], ax=ax)
+    ax = pbeis.nyquist_plot(impedances[i], ax=ax)
     plt.suptitle(f"{model.name}")
     plt.savefig(f"figures/{model.name}.pdf", dpi=300)
 
 # Compare
 _, ax = plt.subplots()
 for i, model in enumerate(models):
-    ax = nyquist_plot(
+    ax = pbeis.nyquist_plot(
         impedances[i], ax=ax, linestyle="-", label=f"{model.name}", alpha=0.7
     )
 ax.legend()
