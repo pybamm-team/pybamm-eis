@@ -8,24 +8,24 @@ from plotting import nyquist_plot
 models = [
     pybamm.lithium_ion.SPM(options={"surface form": "differential"}, name="SPM"),
     pybamm.lithium_ion.SPMe(options={"surface form": "differential"}, name="SPMe"),
-    # pybamm.lithium_ion.MPM(options={"surface form": "algebraic"}, name="MPM"),
-    # pybamm.lithium_ion.DFN(options={"surface form": "differential"}, name="DFN"),
-    # pybamm.lithium_ion.SPMe(
-    #    {
-    #        "surface form": "differential",
-    #        "current collector": "potential pair",
-    #        "dimensionality": 2,
-    #    },
-    #    name="SPMePouch",
-    # ),
-    # pybamm.lithium_ion.DFN(
-    #    {
-    #        "surface form": "differential",
-    #        "current collector": "potential pair",
-    #        "dimensionality": 2,
-    #    },
-    #    name="DFNPouch",
-    # ),
+    pybamm.lithium_ion.MPM(options={"surface form": "algebraic"}, name="MPM"),
+    pybamm.lithium_ion.DFN(options={"surface form": "differential"}, name="DFN"),
+    pybamm.lithium_ion.SPMe(
+        {
+            "surface form": "differential",
+            "current collector": "potential pair",
+            "dimensionality": 2,
+        },
+        name="SPMePouch",
+    ),
+    pybamm.lithium_ion.DFN(
+        {
+            "surface form": "differential",
+            "current collector": "potential pair",
+            "dimensionality": 2,
+        },
+        name="DFNPouch",
+    ),
 ]
 parameter_values = pybamm.ParameterValues("Marquis2019")
 parameter_values = pybamm.get_size_distribution_parameters(
@@ -55,7 +55,9 @@ for i, model in enumerate(models):
 # Compare
 _, ax = plt.subplots()
 for i, model in enumerate(models):
-    ax = nyquist_plot(impedances[i], ax=ax, label=f"{model.name}", alpha=0.7)
+    ax = nyquist_plot(
+        impedances[i], ax=ax, linestyle="-", label=f"{model.name}", alpha=0.7
+    )
 ax.legend()
 plt.savefig("figures/compare_models.pdf", dpi=300)
 plt.show()
