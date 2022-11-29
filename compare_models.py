@@ -1,7 +1,6 @@
 import pybamm
 import numpy as np
 import matplotlib.pyplot as plt
-import time as timer
 from eis_simulation import EISSimulation
 from plotting import nyquist_plot
 
@@ -9,24 +8,24 @@ from plotting import nyquist_plot
 models = [
     pybamm.lithium_ion.SPM(options={"surface form": "differential"}, name="SPM"),
     pybamm.lithium_ion.SPMe(options={"surface form": "differential"}, name="SPMe"),
-    pybamm.lithium_ion.MPM(options={"surface form": "algebraic"}, name="MPM"),
-    pybamm.lithium_ion.DFN(options={"surface form": "differential"}, name="DFN"),
-    pybamm.lithium_ion.SPMe(
-        {
-            "surface form": "differential",
-            "current collector": "potential pair",
-            "dimensionality": 2,
-        },
-        name="SPMePouch",
-    ),
-    pybamm.lithium_ion.DFN(
-        {
-            "surface form": "differential",
-            "current collector": "potential pair",
-            "dimensionality": 2,
-        },
-        name="DFNPouch",
-    ),
+    # pybamm.lithium_ion.MPM(options={"surface form": "algebraic"}, name="MPM"),
+    # pybamm.lithium_ion.DFN(options={"surface form": "differential"}, name="DFN"),
+    # pybamm.lithium_ion.SPMe(
+    #    {
+    #        "surface form": "differential",
+    #        "current collector": "potential pair",
+    #        "dimensionality": 2,
+    #    },
+    #    name="SPMePouch",
+    # ),
+    # pybamm.lithium_ion.DFN(
+    #    {
+    #        "surface form": "differential",
+    #        "current collector": "potential pair",
+    #        "dimensionality": 2,
+    #    },
+    #    name="DFNPouch",
+    # ),
 ]
 parameter_values = pybamm.ParameterValues("Marquis2019")
 parameter_values = pybamm.get_size_distribution_parameters(
@@ -37,14 +36,13 @@ parameter_values = pybamm.get_size_distribution_parameters(
 frequencies = np.logspace(-4, 4, 30)
 impedances = []
 for model in models:
-    start_time = timer.time()
+    print(f"Start calculating impedance for {model.name}")
     eis_sim = EISSimulation(model, parameter_values=parameter_values)
     impedances_freq = eis_sim.solve(
         frequencies,
     )
-    end_time = timer.time()
-    time_elapsed = end_time - start_time
-    print(f"Frequency domain ({model.name}): ", time_elapsed, "s")
+    print(f"Finished calculating impedance for {model.name}")
+    print("Set-up time: ", eis_sim.set_up_time, "Solve time: ", eis_sim.solve_time)
     impedances.append(impedances_freq)
 
 # Plot individually
