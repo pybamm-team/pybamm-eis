@@ -9,7 +9,7 @@ Student: Rishit Dhoot
 Supervisors: Prof Colin Please and Dr. Robert Timms
 
 ## 🔋 Using PyBaMM EIS
-The easiest way to use PyBaMM EIS is to compute the impedance of a model of your choice with all the default settings:
+The easiest way to use PyBaMM EIS is to compute the impedance of a model of your choice with the default parameters:
 ```python3
 import pbeis
 import pybamm
