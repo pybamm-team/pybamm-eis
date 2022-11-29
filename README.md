@@ -47,7 +47,7 @@ virtualenv env
 ```bash
 source env/bin/activate
 ```
-5. Install the required packages
+5. Install the `pbeis` package
 ```bash 
 pip install .
 ```
@@ -69,7 +69,7 @@ cd pybamm-eis
 ```
 where `\path\to\env` is the path to the environment created in step 2 (e.g. `C:\Users\'Username'\env\Scripts\activate.bat`).
 
-4. Install the required packages
+4. Install the `pbeis` package
 ```bash 
 pip install .
 ```
