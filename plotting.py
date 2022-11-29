@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def nyquist_plot(data, ax=None, **kwargs):
+def nyquist_plot(data, ax=None, marker="o", linestyle="None", **kwargs):
     """
-    Generates a Nyquist plot from data. Calls `matplotlib.pyplot.scatter`
+    Generates a Nyquist plot from data. Calls `matplotlib.pyplot.plot`
     with keyword arguments 'kwargs'. For a list of 'kwargs' see the
     `matplotlib plot documentation <https://tinyurl.com/mr3ztw7x>`_
 
@@ -18,6 +18,10 @@ def nyquist_plot(data, ax=None, **kwargs):
     ax : matplotlib Axis, optional
         The axis on which to put the plot. If None, a new figure
         and axis is created.
+    marker : str, optional
+        The marker to use for the plot. Default is 'o'
+    linestyle : str, optional
+        The linestyle to use for the plot. Default is 'None'
     kwargs
         Keyword arguments, passed to plt.scatter.
     """
@@ -31,9 +35,9 @@ def nyquist_plot(data, ax=None, **kwargs):
     else:
         show = False
 
-    ax.scatter(data.real, -data.imag, **kwargs)
-    ax.set_xlabel(r"$Z_\mathrm{Re}$")
-    ax.set_ylabel(r"$-Z_\mathrm{Im}$")
+    ax.plot(data.real, -data.imag, marker=marker, linestyle=linestyle, **kwargs)
+    ax.set_xlabel(r"$Z_\mathrm{Re}$ [Ohm]")
+    ax.set_ylabel(r"$-Z_\mathrm{Im}$ [Ohm]")
 
     if show:
         plt.show()

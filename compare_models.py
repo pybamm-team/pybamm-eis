@@ -1,7 +1,6 @@
 import pybamm
 import numpy as np
 import matplotlib.pyplot as plt
-import time as timer
 from eis_simulation import EISSimulation
 from plotting import nyquist_plot
 
@@ -37,14 +36,13 @@ parameter_values = pybamm.get_size_distribution_parameters(
 frequencies = np.logspace(-4, 4, 30)
 impedances = []
 for model in models:
-    start_time = timer.time()
+    print(f"Start calculating impedance for {model.name}")
     eis_sim = EISSimulation(model, parameter_values=parameter_values)
     impedances_freq = eis_sim.solve(
         frequencies,
     )
-    end_time = timer.time()
-    time_elapsed = end_time - start_time
-    print(f"Frequency domain ({model.name}): ", time_elapsed, "s")
+    print(f"Finished calculating impedance for {model.name}")
+    print("Set-up time: ", eis_sim.set_up_time, "Solve time: ", eis_sim.solve_time)
     impedances.append(impedances_freq)
 
 # Plot individually
@@ -57,7 +55,9 @@ for i, model in enumerate(models):
 # Compare
 _, ax = plt.subplots()
 for i, model in enumerate(models):
-    ax = nyquist_plot(impedances[i], ax=ax, label=f"{model.name}", alpha=0.7)
+    ax = nyquist_plot(
+        impedances[i], ax=ax, linestyle="-", label=f"{model.name}", alpha=0.7
+    )
 ax.legend()
 plt.savefig("figures/compare_models.pdf", dpi=300)
 plt.show()

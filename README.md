@@ -1,10 +1,14 @@
-# Efficient Linear Algebra Methods to Determine Li-ion Battery Behaviour
+# PyBaMM EIS
+PyBaMM EIS rapidly calculates the electrochemical impedance of any battery model defined using PyBaMM.
 
-Code developed as part of the Oxford Mathematics Summer Project "Efficient Linear Algebra Methods to Determine Li-ion Battery Behaviour". 
+
+This code was developed as part of the Oxford Mathematics Summer Project "Efficient Linear Algebra Methods to Determine Li-ion Battery Behaviour". 
 
 Student: Rishit Dhoot
 
 Supervisors: Prof Colin Please and Dr. Robert Timms
+
+## 🔋 Using PyBaMM EIS
 
 ## 💻 About PyBaMM
 The example simulations use the package [PyBaMM](www.pybamm.org) (Python Battery Mathematical Modelling). PyBaMM solves physics-based electrochemical DAE models by using state-of-the-art automatic differentiation and numerical solvers. The Doyle-Fuller-Newman model can be solved in under 0.1 seconds, while the reduced-order Single Particle Model and Single Particle Model with electrolyte can be solved in just a few milliseconds. Additional physics can easily be included such as thermal effects, fast particle diffusion, 3D effects, and more. All models are implemented in a flexible manner, and a wide range of models and parameter sets (NCA, NMC, LiCoO2, ...) are available. There is also functionality to simulate any set of experimental instructions, such as CCCV or GITT, or specify drive cycles.
@@ -19,11 +23,11 @@ To install the requirements on Linux/Mac OS use the following terminal commands:
 
 1. Clone the repository
 ```bash
-https://github.com/rish31415/Summer-Project
+https://github.com/rish31415/pybamm-eis
 ```
-2. Change into the `Summer-Project` directory 
+2. Change into the `pybamm-eis` directory 
 ```bash
-cd Summer-Project
+cd pybamm-eis
 ```
 3. Create a virtual environment
 ```bash
@@ -38,16 +42,16 @@ source env/bin/activate
 pip install -r requirements.txt
 ```
 
-### Linux/Mac OS
-To install the requirements on Linux/Mac OS use the following terminal commands:
+### Windows
+To install the requirements on Windows use the following commands:
 
 1. Clone the repository
 ```bash
-https://github.com/rish31415/Summer-Project
+https://github.com/rish31415/pybamm-eis
 ```
-2. Change into the `Summer-Project` directory 
+2. Change into the `pybamm-eis` directory 
 ```bash
-cd Summer-Project
+cd pybamm-eis
 ```
 3. Activate the virtual environment 
 ```bash

@@ -6,6 +6,7 @@ import time
 from scipy.sparse.linalg import splu
 from scipy.sparse import csc_matrix
 from utils import SymbolReplacer
+from plotting import nyquist_plot
 
 
 class EISSimulation:
@@ -39,7 +40,14 @@ class EISSimulation:
         var_pts=None,
         spatial_methods=None,
     ):
+        # Set attributes
+        self.model_name = model.name
+        self.set_up_time = None
+        self.solve_time = None
+        timer = pybamm.Timer()
+
         # Set up the model for EIS
+        pybamm.logger.info(f"Start setting up {self.model_name} for EIS")
         self.model = self.set_up_model_for_eis(model)
 
         # Create and build a simulation to conviniently build the model
@@ -75,6 +83,11 @@ class EISSimulation:
         self.timescale = self.built_model.timescale_eval
         self.current_scale = sim.parameter_values.evaluate(model.param.I_typ)
 
+        # Set setup time
+        self.set_up_time = timer.time()
+        pybamm.logger.info(f"Finished setting up {self.model_name} for EIS")
+        pybamm.logger.info(f"Set-up time: {self.set_up_time}")
+
     def set_up_model_for_eis(self, model):
         """
         Set up model so that current and voltage are states.
@@ -86,7 +99,7 @@ class EISSimulation:
         model : :class:`pybamm.BaseModel`
             Model to set up for EIS.
         """
-        pybamm.logger.info("Start setting up {} for EIS".format(model.name))
+        pybamm.logger.info("Start setting up {} for EIS".format(self.model_name))
 
         # Make a new copy of the model
         new_model = model.new_copy()
@@ -133,7 +146,7 @@ class EISSimulation:
         new_model.algebraic[i_cell] = I - I_applied
         new_model.initial_conditions[i_cell] = 0
 
-        pybamm.logger.info("Finish setting up {} for EIS".format(model.name))
+        pybamm.logger.info("Finish setting up {} for EIS".format(self.model_name))
 
         return new_model
 
@@ -162,6 +175,9 @@ class EISSimulation:
             The impedances at the given frequencies.
         """
 
+        pybamm.logger.info(f"Start calculating impedance for {self.model_name}")
+        timer = pybamm.Timer()
+
         if method == "direct":
             zs = []
             for frequency in frequencies:
@@ -183,6 +199,11 @@ class EISSimulation:
         # Note: the current density variable is dimensionless so we need
         # to scale by the current scale from the model to get true impedance
         self.solution = np.array(zs) / self.current_scale
+
+        # Store solve time as an attribute
+        self.solve_time = timer.time()
+        pybamm.logger.info(f"Finished calculating impedance for {self.model_name}")
+        pybamm.logger.info(f"Solve time: {self.solve_time}")
 
         return self.solution
 
@@ -231,7 +252,7 @@ class EISSimulation:
         ws = []
         w = start_freq
         next_freq_pos = 1
-        
+
         L = None
         U = None
         LUt = 0
@@ -240,12 +261,11 @@ class EISSimulation:
 
         start_point = self.b
 
-        
         iters = []
         while w <= end_freq:
-            if w >= 0.99*frequencies[next_freq_pos]:
+            if w >= 0.99 * frequencies[next_freq_pos]:
                 next_freq_pos += 1
-            
+
             w_log_increment_max = np.log(frequencies[next_freq_pos]) - np.log(w)
             A = 1.0j * 2 * np.pi * w * self.timescale * self.M - self.J
             num_iters = 0
@@ -336,3 +356,24 @@ class EISSimulation:
 
             w = w * multiplier
         return solution, ws
+
+    def nyquist_plot(self, ax=None, marker="o", linestyle="None", **kwargs):
+        """
+        A method to quickly creates a nyquist plot using the results of the simulation.
+        Calls :meth:`pbeis.nyquist_plot`.
+
+        Parameters
+        ----------
+        ax : matplotlib Axis, optional
+            The axis on which to put the plot. If None, a new figure
+            and axis is created.
+        marker : str, optional
+            The marker to use for the plot. Default is 'o'
+        linestyle : str, optional
+            The linestyle to use for the plot. Default is 'None'
+        kwargs
+            Keyword arguments, passed to plt.scatter.
+        """
+        return nyquist_plot(
+            self.solution, ax=None, marker="o", linestyle="None", **kwargs
+        )
