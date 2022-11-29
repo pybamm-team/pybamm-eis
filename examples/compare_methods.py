@@ -1,9 +1,8 @@
+import pbeis
 import pybamm
 import numpy as np
 import matplotlib.pyplot as plt
 import time as timer
-from eis_simulation import EISSimulation
-from plotting import nyquist_plot
 from scipy.fft import fft
 
 # Set up
@@ -71,7 +70,7 @@ methods = ["direct", "prebicgstab"]
 impedances_freqs = []
 for method in methods:
     start_time = timer.time()
-    eis_sim = EISSimulation(model, parameter_values=parameter_values)
+    eis_sim = pbeis.EISSimulation(model, parameter_values=parameter_values)
     impedances_freq = eis_sim.solve(frequencies, method)
     end_time = timer.time()
     time_elapsed = end_time - start_time
@@ -80,9 +79,9 @@ for method in methods:
 
 # Compare
 _, ax = plt.subplots()
-ax = nyquist_plot(impedances_time, ax=ax, label="Time", alpha=0.7)
+ax = pbeis.nyquist_plot(impedances_time, ax=ax, label="Time", alpha=0.7)
 for i, method in enumerate(methods):
-    ax = nyquist_plot(
+    ax = pbeis.nyquist_plot(
         impedances_freqs[i], ax=ax, label=f"Frequency ({method})", alpha=0.7
     )
 ax.legend()
