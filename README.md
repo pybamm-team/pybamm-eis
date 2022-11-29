@@ -16,7 +16,7 @@ import pybamm
 
 model = pybamm.lithium_ion.DFN(options={"surface form": "differential"})  # DFN with capacitance
 eis_sim = pbeis.EISSimulation(model)
-eis_sim.solve( pbeis.logspace(-4, 4, 30))  # calculate impedance at log-spaced frequencies
+eis_sim.solve(pbeis.logspace(-4, 4, 30))  # calculate impedance at log-spaced frequencies
 eis_sim.nyquist_plot()
 ```
 
