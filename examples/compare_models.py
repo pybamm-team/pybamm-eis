@@ -8,6 +8,14 @@ models = [
     pybamm.lithium_ion.SPMe(options={"surface form": "differential"}, name="SPMe"),
     pybamm.lithium_ion.MPM(options={"surface form": "algebraic"}, name="MPM"),
     pybamm.lithium_ion.DFN(options={"surface form": "differential"}, name="DFN"),
+    pybamm.lithium_ion.SPM(
+        {
+            "surface form": "differential",
+            "current collector": "potential pair",
+            "dimensionality": 2,
+        },
+        name="SPMPouch",
+    ),
     pybamm.lithium_ion.SPMe(
         {
             "surface form": "differential",
@@ -40,7 +48,14 @@ for model in models:
         frequencies,
     )
     print(f"Finished calculating impedance for {model.name}")
-    print("Set-up time: ", eis_sim.set_up_time, "Solve time: ", eis_sim.solve_time)
+    print(
+        "Number of states: ",
+        eis_sim.y0.shape[0],
+        "Set-up time: ",
+        eis_sim.set_up_time,
+        "Solve time: ",
+        eis_sim.solve_time,
+    )
     impedances.append(impedances_freq)
 
 # Plot individually
