@@ -186,7 +186,7 @@ class EISSimulation:
                 z = -x[-2][0] / x[-1][0]
                 zs.append(z)
         elif method in ["prebicgstab", "bicgstab", "cg"]:
-            zs, frequencies = self.iterative_method(frequencies, method=method)
+            zs = self.iterative_method(frequencies, method=method)
         else:
             raise NotImplementedError(
                 "'method' must be 'direct', 'prebicgstab', 'bicgstab' or 'cg', ",
@@ -230,35 +230,24 @@ class EISSimulation:
         -------
         zs : array-like
             The impedances at the given frequencies.
-        ws : list
-            Frequencies evaluated at.
-
         """
         # Setup preconditioner
         if method == "prebicgstab":
             LU = None  # LU decomposition
             LUt = 0  # time to calculate the LU decomposition
-            t = 1  # time per iteration
+            t = 0  # time per iteration
             st = None  # start time
 
-        # Loop over frequencies, stepping adaptively where possible
-        ws = []
+        # Loop over frequencies
         zs = []
-        w = frequencies[0]
-        next_freq_pos = 1
-        start_point = self.b
+        sol = self.b
         iters_per_frequency = []
-        while w <= frequencies[-1]:
-            # Append current frequency to list
-            ws.append(w)
+        for frequency in frequencies:
             # Reset per-frequency iteration counter
             num_iters = 0
-            ns = []
-            # List to store intermediate voltage values
-            voltage_iters = []
 
             # Linear algebra problem to solve
-            A = 1.0j * 2 * np.pi * w * self.timescale * self.M - self.J
+            A = 1.0j * 2 * np.pi * frequency * self.timescale * self.M - self.J
 
             def callback(xk):
                 """
@@ -268,13 +257,9 @@ class EISSimulation:
                 """
                 nonlocal num_iters
                 num_iters += 1
-                voltage_iters.append(xk[-2][0])
-                ns.append(num_iters)
 
             if method == "bicgstab":
-                sol = pbeis.bicgstab(
-                    A, self.b, start_point=start_point, callback=callback
-                )
+                sol = pbeis.bicgstab(A, self.b, start_point=sol, callback=callback)
             elif method == "prebicgstab":
                 # Update preconditioner based on solve time
                 et = time.process_time()
@@ -284,18 +269,18 @@ class EISSimulation:
                 if LUt <= t:
                     LUstart_time = time.process_time()
                     LU = splu(A)
-                    start_point = LU.solve(self.b)
+                    sol = LU.solve(self.b)
                     LUt = time.process_time() - LUstart_time
 
                 st = time.process_time()
 
                 # Solve
                 sol = pbeis.prebicgstab(
-                    A, self.b, LU, start_point=start_point, callback=callback
+                    A, self.b, LU, start_point=sol, callback=callback
                 )
             elif method == "cg":
                 sol = pbeis.conjugate_gradient(
-                    A, self.b, start_point=start_point, callback=callback
+                    A, self.b, start_point=sol, callback=callback
                 )
 
             # Store number of iterations at this frequency
@@ -308,55 +293,7 @@ class EISSimulation:
             Z = -V / I
             zs.append(Z)
 
-            # Set max increment for log(w)
-            if w >= 0.99 * frequencies[next_freq_pos]:
-                next_freq_pos += 1
-            max_step_size = np.log(frequencies[next_freq_pos]) - np.log(w)
-
-            if len(zs) == 1:
-                # First step, use the maximum step size and previous solution
-                step_size = max_step_size
-                start_point = sol
-            else:
-                # Choose step size in frequency and starting solution for the next
-                # iteration based on previous solutions and step sizes
-
-                # Store previous step size
-                old_step_size = step_size
-
-                # Find the errors between the voltage after each iteration of
-                # the method and the final (converged) voltage
-                es = np.abs(np.array(voltage_iters) - V)
-
-                # Minimize y = sqrt(e/kappa)/n over each iteration
-                # with e = kappa * (step_size**2 + step_size*old_step_size)
-                V_old = start_point[-2][0]
-                kappa = max(np.abs(V - V_old) / step_size**2, 1e-8)
-                ns.reverse()  # count down iterations, not up
-                ys = []
-                for i, e in enumerate(es):
-                    y = (
-                        (
-                            -step_size
-                            + np.sqrt((step_size) ** 2 + 4 * (e + 0.01) / kappa)
-                        )
-                        / 2
-                        / ns[i]
-                    )
-                    ys.append(y)
-
-                # Step size is min{ys, max_step_size}
-                step_size = min(min(ys), max_step_size)
-
-                # Set starting solution based on calculated step size
-                old_sol = sol
-                start_point = sol + step_size / old_step_size * (sol - old_sol)
-
-            # Increase frequency
-            multiplier = np.exp(step_size)
-            w = w * multiplier
-
-        return zs, ws
+        return zs
 
     def nyquist_plot(self, ax=None, marker="o", linestyle="None", **kwargs):
         """
