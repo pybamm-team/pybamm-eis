@@ -156,7 +156,7 @@ def bicgstab(A, b, start_point=None, callback=empty, tol=10**-3):
     return xk
 
 
-def prebicgstab(A, b, L, U=None, start_point=None, callback=empty, tol=1e-3):
+def prebicgstab(A, b, LU, start_point=None, callback=empty, tol=1e-3):
     """
     Uses the preconditioned BicgSTAB method to solve Ax = b. The preconditioner
     is of the form LU, or just of the form L.
@@ -166,10 +166,8 @@ def prebicgstab(A, b, L, U=None, start_point=None, callback=empty, tol=1e-3):
     A : scipy sparse csr matrix
         A square matrix.
     b : numpy nx1 array
-    L : scipy sparse csr matrix
-        A lower (block) triangular matrix (or superLU object)
-    U : scipy sparse crs matrix, optional
-        An Upper (block) triangular matrix. None used if not given.
+    LU : scipy sparse csr matrix
+        The LU decomposition (typically a superLU object)
     start_point : numpy nx1 array, optional
         Where the iteration starts. If not provided the initial guess will be zero.
     callback : function, optional
@@ -205,9 +203,8 @@ def prebicgstab(A, b, L, U=None, start_point=None, callback=empty, tol=1e-3):
     # iterations as follows
     max_num_iter = 2 * np.shape(b)[0]
 
-    # Check the format of L and U. See if L is a scipy super LU format, or if it
-    # is a scipy sparse matrix.
-    if type(L) == scipy.sparse.linalg.SuperLU:
+    # Check the format of LU (super LU or scipy sparse matrix)
+    if type(LU) == scipy.sparse.linalg.SuperLU:
         superLU = True
     else:
         superLU = False
@@ -223,11 +220,9 @@ def prebicgstab(A, b, L, U=None, start_point=None, callback=empty, tol=1e-3):
         # Use the preconditioning to solve LUy = pk. Do this depending
         # on the format of L.
         if superLU:
-            y = np.array(L.solve(pk))
+            y = np.array(LU.solve(pk))
         else:
-            y = scipy.sparse.linalg.spsolve(L, pk)
-            if U:
-                y = np.array(scipy.sparse.linalg.spsolve(U, y))
+            y = scipy.sparse.linalg.spsolve(LU, pk)
 
         # Reshape y to a nx1 matrix, so the rest of the calculations can be done.
         y = np.reshape(y, np.shape(b))
@@ -244,11 +239,9 @@ def prebicgstab(A, b, L, U=None, start_point=None, callback=empty, tol=1e-3):
         # Perform the preconditioning to solve LUz = s. Do this depending
         # on the format of L.
         if superLU:
-            z = np.array(L.solve(s))
+            z = np.array(LU.solve(s))
         else:
-            z = scipy.sparse.linalg.spsolve(L, s)
-            if U:
-                z = np.array(scipy.sparse.linalg.spsolve(U, z))
+            z = scipy.sparse.linalg.spsolve(LU, s)
 
         # Reshape z to a nx1 matrix, so the rest of the calculations can be done.
         z = np.reshape(z, np.shape(b))
