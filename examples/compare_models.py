@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 # Load models and parameters
 models = [
     pybamm.lithium_ion.SPM(options={"surface form": "differential"}, name="SPM"),
-    pybamm.lithium_ion.SPMe(options={"surface form": "differential"}, name="SPMe"),
-    pybamm.lithium_ion.MPM(options={"surface form": "algebraic"}, name="MPM"),
     pybamm.lithium_ion.DFN(options={"surface form": "differential"}, name="DFN"),
     pybamm.lithium_ion.SPM(
         {
@@ -14,15 +12,7 @@ models = [
             "current collector": "potential pair",
             "dimensionality": 2,
         },
-        name="SPMPouch",
-    ),
-    pybamm.lithium_ion.SPMe(
-        {
-            "surface form": "differential",
-            "current collector": "potential pair",
-            "dimensionality": 2,
-        },
-        name="SPMePouch",
+        name="SPM (pouch)",
     ),
     pybamm.lithium_ion.DFN(
         {
@@ -30,7 +20,7 @@ models = [
             "current collector": "potential pair",
             "dimensionality": 2,
         },
-        name="DFNPouch",
+        name="DFN (pouch)",
     ),
 ]
 parameter_values = pybamm.ParameterValues("Marquis2019")
@@ -57,13 +47,6 @@ for model in models:
         eis_sim.solve_time,
     )
     impedances.append(impedances_freq)
-
-# Plot individually
-for i, model in enumerate(models):
-    _, ax = plt.subplots()
-    ax = pbeis.nyquist_plot(impedances[i], ax=ax)
-    plt.suptitle(f"{model.name}")
-    plt.savefig(f"figures/{model.name}.pdf", dpi=300)
 
 # Compare
 _, ax = plt.subplots()

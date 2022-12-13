@@ -7,16 +7,13 @@ from scipy.fft import fft
 
 # Set up
 model = pybamm.lithium_ion.SPM(options={"surface form": "differential"}, name="SPM")
-
 parameter_values = pybamm.ParameterValues("Marquis2019")
-
 frequencies = np.logspace(-4, 2, 30)
 
 # Time domain
 I = 50 * 1e-3
 number_of_periods = 20
 samples_per_period = 16
-plot = False  # whether to plot results inside the loop
 
 
 def current_function(t):
@@ -49,17 +46,6 @@ for frequency in frequencies:
     idx = np.argmax(np.abs(current_fft))
     impedance = -voltage_fft[idx] / current_fft[idx]
     impedances_time.append(impedance)
-    # Plot
-    if plot:
-        x = np.linspace(0, 1 / dt, len(current_fft))
-        _, ax = plt.subplots(2, 2)
-        ax[0, 0].plot(time, current)
-        ax[0, 1].plot(time, voltage)
-        ax[1, 0].plot(x, np.abs(current_fft))
-        ax[1, 1].plot(x, np.abs(voltage_fft))
-        ax[1, 0].set_xlim([0, frequency * 3])
-        ax[1, 1].set_xlim([0, frequency * 3])
-        plt.show()
 
 end_time = timer.time()
 time_elapsed = end_time - start_time
