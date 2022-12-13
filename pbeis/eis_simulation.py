@@ -233,7 +233,7 @@ class EISSimulation:
         """
         # Allocate solve times for preconditioner
         if method == "prebicgstab":
-            LU_time = 0
+            lu_time = 0
             solve_time = 0
 
         # Loop over frequencies
@@ -260,16 +260,16 @@ class EISSimulation:
                 sol = pbeis.bicgstab(A, self.b, start_point=sol, callback=callback)
             elif method == "prebicgstab":
                 # Update preconditioner based on solve time
-                if LU_time <= solve_time:
-                    LU_start_time = time.process_time()
-                    LU = splu(A)
-                    sol = LU.solve(self.b)
-                    LU_time = time.process_time() - LU_start_time
+                if lu_time <= solve_time:
+                    lu_start_time = time.process_time()
+                    lu = splu(A)
+                    sol = lu.solve(self.b)
+                    lu_time = time.process_time() - lu_start_time
 
                 # Solve
                 solve_start_time = time.process_time()
                 sol = pbeis.prebicgstab(
-                    A, self.b, LU, start_point=sol, callback=callback
+                    A, self.b, lu, start_point=sol, callback=callback
                 )
                 solve_time = time.process_time() - solve_start_time
 
@@ -283,10 +283,8 @@ class EISSimulation:
 
             # The model is set up such that the voltage is the penultimate
             # entry and the current density variable is the final entry
-            V = sol[-2][0]
-            I = sol[-1][0]
-            Z = -V / I
-            zs.append(Z)
+            z = -sol[-2][0] / sol[-1][0]
+            zs.append(z)
 
         return zs
 
