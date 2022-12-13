@@ -245,14 +245,13 @@ class EISSimulation:
             # Reset per-frequency iteration counter
             num_iters = 0
 
-            # Linear algebra problem to solve
+            # Construct the matrix A(frequency)
             A = 1.0j * 2 * np.pi * frequency * self.timescale * self.M - self.J
 
             def callback(xk):
                 """
                 Increments the number of iterations in the call to the 'method'
-                functions and stores the intermediate values corresponding the
-                voltage (penultimate entry).
+                functions.
                 """
                 nonlocal num_iters
                 num_iters += 1
