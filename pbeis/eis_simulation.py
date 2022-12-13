@@ -231,17 +231,16 @@ class EISSimulation:
         zs : array-like
             The impedances at the given frequencies.
         """
-        # Setup preconditioner
+        # Allocate solve times for preconditioner
         if method == "prebicgstab":
-            LU = None  # LU decomposition
-            LUt = 0  # time to calculate the LU decomposition
-            t = 0  # time per iteration
-            st = None  # start time
+            LU_time = 0
+            solve_time = 0
 
         # Loop over frequencies
         zs = []
         sol = self.b
         iters_per_frequency = []
+
         for frequency in frequencies:
             # Reset per-frequency iteration counter
             num_iters = 0
@@ -262,22 +261,19 @@ class EISSimulation:
                 sol = pbeis.bicgstab(A, self.b, start_point=sol, callback=callback)
             elif method == "prebicgstab":
                 # Update preconditioner based on solve time
-                et = time.process_time()
-                if st:
-                    t = et - st
-
-                if LUt <= t:
-                    LUstart_time = time.process_time()
+                if LU_time <= solve_time:
+                    LU_start_time = time.process_time()
                     LU = splu(A)
                     sol = LU.solve(self.b)
-                    LUt = time.process_time() - LUstart_time
-
-                st = time.process_time()
+                    LU_time = time.process_time() - LU_start_time
 
                 # Solve
+                solve_start_time = time.process_time()
                 sol = pbeis.prebicgstab(
                     A, self.b, LU, start_point=sol, callback=callback
                 )
+                solve_time = time.process_time() - solve_start_time
+
             elif method == "cg":
                 sol = pbeis.conjugate_gradient(
                     A, self.b, start_point=sol, callback=callback
