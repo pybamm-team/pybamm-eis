@@ -248,7 +248,6 @@ class EISSimulation:
         next_freq_pos = 1
         start_point = self.b
         iters_per_frequency = []
-
         while w <= frequencies[-1]:
             # Append current frequency to list
             ws.append(w)
@@ -257,11 +256,6 @@ class EISSimulation:
             ns = []
             # List to store intermediate voltage values
             voltage_iters = []
-            if w >= 0.99 * frequencies[next_freq_pos]:
-                next_freq_pos += 1
-
-            # Set max increment for log(w)
-            max_step_size = np.log(frequencies[next_freq_pos]) - np.log(w)
 
             # Linear algebra problem to solve
             A = 1.0j * 2 * np.pi * w * self.timescale * self.M - self.J
@@ -313,6 +307,11 @@ class EISSimulation:
             I = sol[-1][0]
             Z = -V / I
             zs.append(Z)
+
+            # Set max increment for log(w)
+            if w >= 0.99 * frequencies[next_freq_pos]:
+                next_freq_pos += 1
+            max_step_size = np.log(frequencies[next_freq_pos]) - np.log(w)
 
             if len(zs) == 1:
                 # First step, use the maximum step size and previous solution
