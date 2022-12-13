@@ -228,125 +228,136 @@ class EISSimulation:
             the default.
         Returns
         -------
-        solution : array-like
+        zs : array-like
             The impedances at the given frequencies.
         ws : list
             Frequencies evaluated at.
 
         """
-        start_freq = frequencies[0]
-        end_freq = frequencies[-1]
+        # Setup preconditioner
+        if method == "prebicgstab":
+            LU = None  # LU decomposition
+            LUt = 0  # time to calculate the LU decomposition
+            t = 1  # time per iteration
+            st = None  # start time
 
-        solution = []
+        # Loop over frequencies, stepping adaptively where possible
         ws = []
-        w = start_freq
+        zs = []
+        w = frequencies[0]
         next_freq_pos = 1
-
-        L = None
-        U = None
-        LUt = 0
-        t = 1
-        st = None
-
         start_point = self.b
+        iters_per_frequency = []
 
-        iters = []
-        while w <= end_freq:
+        while w <= frequencies[-1]:
+            # Append current frequency to list
+            ws.append(w)
+            # Reset per-frequency iteration counter
+            num_iters = 0
+            ns = []
+            # List to store intermediate voltage values
+            voltage_iters = []
             if w >= 0.99 * frequencies[next_freq_pos]:
                 next_freq_pos += 1
 
-            w_log_increment_max = np.log(frequencies[next_freq_pos]) - np.log(w)
-            A = 1.0j * 2 * np.pi * w * self.timescale * self.M - self.J
-            num_iters = 0
-            stored_vals = []
-            ns = []
+            # Set max increment for log(w)
+            max_step_size = np.log(frequencies[next_freq_pos]) - np.log(w)
 
-            if method == "prebicgstab":
+            # Linear algebra problem to solve
+            A = 1.0j * 2 * np.pi * w * self.timescale * self.M - self.J
+
+            def callback(xk):
+                """
+                Increments the number of iterations in the call to the 'method'
+                functions and stores the intermediate values corresponding the
+                voltage (penultimate entry).
+                """
+                nonlocal num_iters
+                num_iters += 1
+                voltage_iters.append(xk[-2][0])
+                ns.append(num_iters)
+
+            if method == "bicgstab":
+                sol = pbeis.bicgstab(
+                    A, self.b, start_point=start_point, callback=callback
+                )
+            elif method == "prebicgstab":
+                # Update preconditioner based on solve time
                 et = time.process_time()
                 if st:
                     t = et - st
 
                 if LUt <= t:
                     LUstart_time = time.process_time()
-                    L = splu(A)
-                    start_point = L.solve(self.b)
+                    LU = splu(A)
+                    start_point = LU.solve(self.b)
                     LUt = time.process_time() - LUstart_time
 
                 st = time.process_time()
 
-            def callback(xk):
-                nonlocal num_iters
-                num_iters += 1
-                stored_vals.append(xk[-1])
-                ns.append(num_iters)
-
-            if method == "bicgstab":
-                c = pbeis.bicgstab(
-                    A, self.b, start_point=start_point, callback=callback
-                )
-            elif method == "prebicgstab":
-                c = pbeis.prebicgstab(
-                    A, self.b, L, U, start_point=start_point, callback=callback
+                # Solve
+                sol = pbeis.prebicgstab(
+                    A, self.b, LU, start_point=start_point, callback=callback
                 )
             elif method == "cg":
-                c = pbeis.conjugate_gradient(
+                sol = pbeis.conjugate_gradient(
                     A, self.b, start_point=start_point, callback=callback
                 )
+
+            # Store number of iterations at this frequency
+            iters_per_frequency.append(num_iters)
 
             # The model is set up such that the voltage is the penultimate
             # entry and the current density variable is the final entry
-            V = c[-2]
-            I = c[-1]
+            V = sol[-2][0]
+            I = sol[-1][0]
             Z = -V / I
-            solution.append(Z)
+            zs.append(Z)
 
-            # find the errors between the value of v after each iteration of
-            # bicgstab and the final value
-            es = np.abs(np.array(stored_vals) - V)
-
-            # create a list of the number of iterations. This combines with the
-            # previous to give corresponding lists with the error from the answer
-            # and the number of iterations that were subsequently taken.
-            ns = num_iters + 1 - np.array(ns)
-
-            old_c = np.array(c)
-            if len(solution) == 1:
-                w_log_increment = float(w_log_increment_max)
-                start_point = c
+            if len(zs) == 1:
+                # First step, use the maximum step size and previous solution
+                step_size = max_step_size
+                start_point = sol
             else:
-                old_increment = float(w_log_increment)
-                kappa = np.abs(V - start_point[-2]) / w_log_increment**2
-                if kappa == 0:
-                    kappa = 0.001
+                # Choose step size in frequency and starting solution for the next
+                # iteration based on previous solutions and step sizes
+
+                # Store previous step size
+                old_step_size = step_size
+
+                # Find the errors between the voltage after each iteration of
+                # the method and the final (converged) voltage
+                es = np.abs(np.array(voltage_iters) - V)
+
+                # Minimize y = sqrt(e/kappa)/n over each iteration
+                # with e = kappa * (step_size**2 + step_size*old_step_size)
+                V_old = start_point[-2][0]
+                kappa = max(np.abs(V - V_old) / step_size**2, 1e-8)
+                ns.reverse()  # count down iterations, not up
                 ys = []
-                for j, e in enumerate(es):
+                for i, e in enumerate(es):
                     y = (
-                        2
-                        * ns[j]
-                        / (
-                            -w_log_increment
-                            + np.sqrt((w_log_increment) ** 2 + 4 * (e + 0.01) / kappa)
+                        (
+                            -step_size
+                            + np.sqrt((step_size) ** 2 + 4 * (e + 0.01) / kappa)
                         )
+                        / 2
+                        / ns[i]
                     )
                     ys.append(y)
-                y_min = min(ys)
-                if ys[-1] == y_min:
-                    n_val = ns[-1] + 1
-                    w_log_increment = min(n_val / y_min[0], w_log_increment_max)
-                else:
-                    w_log_increment = min(
-                        ns[ys.index(y_min)] / y_min[0], w_log_increment_max
-                    )
 
-                start_point = c + w_log_increment / old_increment * (c - old_c)
+                # Step size is min{ys, max_step_size}
+                step_size = min(min(ys), max_step_size)
 
-            multiplier = np.exp(w_log_increment)
+                # Set starting solution based on calculated step size
+                old_sol = sol
+                start_point = sol + step_size / old_step_size * (sol - old_sol)
 
-            ws.append(w)
-            iters.append(num_iters)
-
+            # Increase frequency
+            multiplier = np.exp(step_size)
             w = w * multiplier
-        return solution, ws
+
+        return zs, ws
 
     def nyquist_plot(self, ax=None, marker="o", linestyle="None", **kwargs):
         """
@@ -366,5 +377,5 @@ class EISSimulation:
             Keyword arguments, passed to plt.scatter.
         """
         return pbeis.nyquist_plot(
-            self.solution, ax=None, marker="o", linestyle="None", **kwargs
+            self.solution, ax=None, marker=marker, linestyle=linestyle, **kwargs
         )
