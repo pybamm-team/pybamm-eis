@@ -76,9 +76,6 @@ class EISSimulation:
         # final entry by construction
         self.b = np.zeros_like(self.y0)
         self.b[-1] = -1
-        # Store time and current scales
-        self.timescale = self.built_model.timescale_eval
-        self.current_scale = sim.parameter_values.evaluate(model.param.I_typ)
 
         # Set setup time
         self.set_up_time = timer.time()
@@ -102,24 +99,24 @@ class EISSimulation:
         new_model = model.new_copy()
 
         # Create a voltage variable
-        V_cell = pybamm.Variable("Terminal voltage variable")
-        new_model.variables["Terminal voltage variable"] = V_cell
-        V = new_model.variables["Terminal voltage [V]"]
+        V_cell = pybamm.Variable("Voltage variable")
+        new_model.variables["Voltage variable"] = V_cell
+        V = new_model.variables["Voltage [V]"]
         # Add an algebraic equation for the voltage variable
         new_model.algebraic[V_cell] = V_cell - V
-        new_model.initial_conditions[V_cell] = (
-            new_model.param.p.U_ref - new_model.param.n.U_ref
-        )
+        new_model.initial_conditions[V_cell] = new_model.param.ocv_init
+
 
         # Now make current density a variable
-        # To do so, we replace all instances of the current density in the
-        # model with a current density variable, which is obtained from the
-        # FunctionControl submodel
+        # To do so, we replace all instances of the current in the model with a current 
+        # variable, which is obtained from the FunctionControl submodel
 
         # Create the FunctionControl submodel and extract variables
         external_circuit_variables = pybamm.external_circuit.FunctionControl(
             model.param, None, model.options, control="algebraic"
         ).get_fundamental_variables()
+
+        # TODO: remove SymbolReplacer and use PyBaMM's "set up for experiment"
 
         # Perform the replacement
         symbol_replacement_map = {
@@ -133,15 +130,15 @@ class EISSimulation:
         )
         replacer.process_model(new_model, inplace=True)
 
-        # Add an algebraic equation for the current density variable
+        # Add an algebraic equation for the current variable
         # External circuit submodels are always equations on the current
-        i_cell = new_model.variables["Current density variable"]
+        I_var = new_model.variables["Current variable [A]"]
         I = new_model.variables["Current [A]"]
         I_applied = pybamm.FunctionParameter(
-            "Current function [A]", {"Time [s]": pybamm.t * new_model.param.timescale}
+            "Current function [A]", {"Time [s]": pybamm.t}
         )
-        new_model.algebraic[i_cell] = I - I_applied
-        new_model.initial_conditions[i_cell] = 0
+        new_model.algebraic[I_var] = I - I_applied
+        new_model.initial_conditions[I_var] = 0
 
         pybamm.logger.info("Finish setting up {} for EIS".format(self.model_name))
 
@@ -178,7 +175,7 @@ class EISSimulation:
         if method == "direct":
             zs = []
             for frequency in frequencies:
-                A = 1.0j * 2 * np.pi * frequency * self.timescale * self.M - self.J
+                A = 1.0j * 2 * np.pi * frequency * self.M - self.J
                 lu = splu(A)
                 x = lu.solve(self.b)
                 # The model is set up such that the voltage is the penultimate
@@ -193,9 +190,7 @@ class EISSimulation:
                 f"but is '{method}'",
             )
 
-        # Note: the current density variable is dimensionless so we need
-        # to scale by the current scale from the model to get true impedance
-        self.solution = np.array(zs) / self.current_scale
+        self.solution = np.array(zs) 
 
         # Store solve time as an attribute
         self.solve_time = timer.time()
@@ -246,7 +241,7 @@ class EISSimulation:
             num_iters = 0
 
             # Construct the matrix A(frequency)
-            A = 1.0j * 2 * np.pi * frequency * self.timescale * self.M - self.J
+            A = 1.0j * 2 * np.pi * frequency * self.M - self.J
 
             def callback(xk):
                 """

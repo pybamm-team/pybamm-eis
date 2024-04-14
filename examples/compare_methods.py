@@ -38,7 +38,7 @@ for frequency in frequencies:
     # Extract final two periods of the solution
     time = sol["Time [s]"].entries[-3 * samples_per_period - 1 :]
     current = sol["Current [A]"].entries[-3 * samples_per_period - 1 :]
-    voltage = sol["Terminal voltage [V]"].entries[-3 * samples_per_period - 1 :]
+    voltage = sol["Voltage [V]"].entries[-3 * samples_per_period - 1 :]
     # FFT
     current_fft = fft(current)
     voltage_fft = fft(voltage)
