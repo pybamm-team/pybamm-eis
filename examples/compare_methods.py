@@ -72,5 +72,5 @@ for i, method in enumerate(methods):
     )
 ax.legend()
 plt.suptitle(f"{model.name}")
-plt.savefig(f"{model.name}_time_vs_freq.pdf", dpi=300)
+plt.savefig(f"figures/{model.name}_time_vs_freq.pdf", dpi=300)
 plt.show()

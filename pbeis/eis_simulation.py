@@ -60,7 +60,6 @@ class EISSimulation:
         )
         sim.build()
         self.built_model = sim.built_model
-        self.current_scale = sim.parameter_values.evaluate(model.param.I_typ)
 
         # Extract mass matrix and Jacobian
         solver = pybamm.BaseSolver()
@@ -100,9 +99,9 @@ class EISSimulation:
         new_model = model.new_copy()
 
         # Create a voltage variable
-        V_cell = pybamm.Variable("Terminal voltage variable")
-        new_model.variables["Terminal voltage variable"] = V_cell
-        V = new_model.variables["Terminal voltage [V]"]
+        V_cell = pybamm.Variable("Voltage variable")
+        new_model.variables["Voltage variable"] = V_cell
+        V = new_model.variables["Voltage [V]"]
         # Add an algebraic equation for the voltage variable
         new_model.algebraic[V_cell] = V_cell - V
         new_model.initial_conditions[V_cell] = new_model.param.ocv_init
@@ -191,7 +190,7 @@ class EISSimulation:
                 f"but is '{method}'",
             )
 
-        self.solution = np.array(zs) / self.current_scale
+        self.solution = np.array(zs) 
 
         # Store solve time as an attribute
         self.solve_time = timer.time()
