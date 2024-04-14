@@ -60,6 +60,7 @@ class EISSimulation:
         )
         sim.build()
         self.built_model = sim.built_model
+        self.current_scale = sim.parameter_values.evaluate(model.param.I_typ)
 
         # Extract mass matrix and Jacobian
         solver = pybamm.BaseSolver()
@@ -190,7 +191,7 @@ class EISSimulation:
                 f"but is '{method}'",
             )
 
-        self.solution = np.array(zs) 
+        self.solution = np.array(zs) / self.current_scale
 
         # Store solve time as an attribute
         self.solve_time = timer.time()
