@@ -52,7 +52,7 @@ time_elapsed = end_time - start_time
 print("Time domain method: ", time_elapsed, "s")
 
 # Frequency domain
-methods = ["direct", "prebicgstab"]
+methods = ["direct"]
 impedances_freqs = []
 for method in methods:
     start_time = timer.time()
@@ -72,5 +72,4 @@ for i, method in enumerate(methods):
     )
 ax.legend()
 plt.suptitle(f"{model.name}")
-plt.savefig(f"figures/{model.name}_time_vs_freq.pdf", dpi=300)
 plt.show()
