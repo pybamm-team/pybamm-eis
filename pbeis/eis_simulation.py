@@ -256,7 +256,7 @@ class EISSimulation:
                 num_iters += 1
 
             if method == "bicgstab":
-                sol = pbeis.bicgstab(self.A, self.b, start_point=sol, callback=callback)
+                sol = pbeis.bicgstab(A, self.b, start_point=sol, callback=callback)
             elif method == "prebicgstab":
                 # Update preconditioner based on solve time
                 if lu_time <= solve_time:
