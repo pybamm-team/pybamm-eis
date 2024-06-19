@@ -16,7 +16,7 @@ setup(
     author_email="timms@maths.ox.ac.uk",
     license="LICENSE",
     install_requires=[
-        "PyBaMM @ git+https://github.com/pybamm-team/PyBaMM.git@c29e736",
+        "pybamm @ git+https://github.com/pybamm-team/PyBaMM.git@088ca3827c831e1b93c4667b6f4353f64fb32cbf",
         "matplotlib",
     ],
 )
