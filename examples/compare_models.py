@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import pybamm
 
 import pbeis
@@ -36,7 +37,7 @@ parameter_values = pybamm.get_size_distribution_parameters(
 )
 
 # Loop over models and calculate impedance
-frequencies = pbeis.logspace(-4, 4, 30)
+frequencies = np.logspace(-4, 4, 30)
 impedances = []
 for model in models:
     print(f"Start calculating impedance for {model.name}")

@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import pybamm
 
 import pbeis
@@ -44,7 +45,7 @@ eis_sim = pbeis.EISSimulation(model, parameter_values=parameter_values)
 
 # Choose frequencies and calculate impedance, looping over input parameter values
 # and adding the results to a Nyquist plot
-frequencies = pbeis.logspace(-4, 4, 30)
+frequencies = np.logspace(-4, 4, 30)
 
 j0_refs = [1, 5]
 C_dls = [0.1, 10]
