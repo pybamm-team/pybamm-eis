@@ -1,0 +1,31 @@
+.wy-nav-content {
+    max-width: 1200px !important;
+}
+
+body {
+    font-family: "Open Sans", sans-serif;
+}
+
+pre,
+code {
+    font-size: 100%;
+    line-height: 155%;
+}
+
+h1 {
+    font-family: "Lato", sans-serif;
+    color: #013243;
+    /* warm black */
+}
+
+h2 {
+    color: #013243;
+    /* warm black */
+    letter-spacing: -0.03em;
+}
+
+h3 {
+    color: #013243;
+    /* warm black */
+    letter-spacing: -0.03em;
+}

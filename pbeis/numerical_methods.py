@@ -1,13 +1,8 @@
-#
-# Linear algebra methods
-#
-
 import numpy as np
 import scipy.sparse
 
 
 def empty():
-    # An empty callback function. Callbacks can be written as desired.
     pass
 
 

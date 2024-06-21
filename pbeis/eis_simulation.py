@@ -255,6 +255,7 @@ class EISSimulation:
             'bicgstab' - use bicgstab with no preconditioner
             'prebicgstab' - use bicgstab with a preconditioner, this is
             the default.
+
         Returns
         -------
         zs : array-like

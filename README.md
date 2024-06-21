@@ -6,10 +6,11 @@ The easiest way to use PyBaMM EIS is to compute the impedance of a model of your
 ```python3
 import pbeis
 import pybamm
+import numpy as np
 
 model = pybamm.lithium_ion.DFN(options={"surface form": "differential"})  # DFN with capacitance
 eis_sim = pbeis.EISSimulation(model)
-eis_sim.solve(pbeis.logspace(-4, 4, 30))  # calculate impedance at log-spaced frequencies
+eis_sim.solve(np.logspace(-4, 4, 30))  # calculate impedance at log-spaced frequencies
 eis_sim.nyquist_plot()
 ```
 
@@ -88,14 +89,24 @@ To install as a developer follow the instructions above, replacing the final ste
 pip install -e .
 ```
 This will allow you to edit the code locally.
+
+## 📖 Documentation
+API documentation for the `pbeis` package can be built locally using [Sphinx](https://www.sphinx-doc.org/en/master/). To build the documentation, first change into the `docs` directory, and then execute the following command:
+```bash
+make html
+```
+This will generate a number of html files in the `docs/_build/html` directory. To view the documentation, open the file `docs/_build/html/index.html` in a web browser.
+
+## 🛠️ Contributing to PyBaMM
+
+If you'd like to help us develop PyBaMM by adding new methods, writing documentation, or fixing embarrassing bugs, please have a look at these [guidelines](https://github.com/pybamm-team/PyBaMM/blob/develop/CONTRIBUTING.md) first.
+
+
 ## 🎉 Acknowledgments
 This code was developed as part of the Oxford Mathematics Summer Project _"Efficient Linear Algebra Methods to Determine Li-ion Battery Behaviour"_. 
 
 Student: Rishit Dhoot
 Supervisors: Prof Colin Please and Dr. Robert Timms
-## 🛠️ Contributing to PyBaMM
-
-If you'd like to help us develop PyBaMM by adding new methods, writing documentation, or fixing embarrassing bugs, please have a look at these [guidelines](https://github.com/pybamm-team/PyBaMM/blob/develop/CONTRIBUTING.md) first.
 
 ## 📫 Get in touch
 
