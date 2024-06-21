@@ -4,7 +4,13 @@ import matplotlib.pyplot as plt
 
 # Load models and parameters
 models = [
-    pybamm.lithium_ion.SPM(options={"surface form": "differential"}, name="SPM"),
+    pybamm.lithium_ion.SPM(
+        options={
+            "surface form": "differential",
+        },
+        name="SPM",
+    ),
+    pybamm.lithium_ion.SPMe(options={"surface form": "differential"}, name="SPMe"),
     pybamm.lithium_ion.DFN(options={"surface form": "differential"}, name="DFN"),
     pybamm.lithium_ion.SPM(
         {
@@ -55,5 +61,4 @@ for i, model in enumerate(models):
         impedances[i], ax=ax, linestyle="-", label=f"{model.name}", alpha=0.7
     )
 ax.legend()
-plt.savefig("figures/compare_models.pdf", dpi=300)
 plt.show()

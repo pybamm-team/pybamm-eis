@@ -74,9 +74,9 @@ class SymbolReplacer(object):
                 "Replacing symbols in {!r} (initial conditions)".format(variable)
             )
             if self.process_initial_conditions:
-                new_initial_conditions[
-                    self.process_symbol(variable)
-                ] = self.process_symbol(equation)
+                new_initial_conditions[self.process_symbol(variable)] = (
+                    self.process_symbol(equation)
+                )
             else:
                 new_initial_conditions[self.process_symbol(variable)] = equation
         model.initial_conditions = new_initial_conditions

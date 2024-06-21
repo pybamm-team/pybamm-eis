@@ -36,9 +36,13 @@ def nyquist_plot(data, ax=None, marker="o", linestyle="None", **kwargs):
         show = False
 
     ax.plot(data.real, -data.imag, marker=marker, linestyle=linestyle, **kwargs)
+    _, xmax = ax.get_xlim()
+    _, ymax = ax.get_ylim()
+    axmax = max(xmax, ymax)
+    plt.axis([0, axmax, 0, axmax])
+    plt.gca().set_aspect("equal", adjustable="box")
     ax.set_xlabel(r"$Z_\mathrm{Re}$ [Ohm]")
     ax.set_ylabel(r"$-Z_\mathrm{Im}$ [Ohm]")
-
     if show:
         plt.show()
 

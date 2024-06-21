@@ -15,5 +15,8 @@ setup(
     author="Rishit Dhoot & Robert Timms",
     author_email="timms@maths.ox.ac.uk",
     license="LICENSE",
-    install_requires=["pybamm[all]==24.1", "matplotlib"],
+    install_requires=[
+        "pybamm @ git+https://github.com/pybamm-team/PyBaMM.git@088ca3827c831e1b93c4667b6f4353f64fb32cbf",
+        "matplotlib",
+    ],
 )

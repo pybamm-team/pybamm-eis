@@ -4,6 +4,7 @@ import numpy as np
 import time
 from scipy.sparse.linalg import splu
 from scipy.sparse import csc_matrix
+from casadi import vertcat
 
 
 class EISSimulation:
@@ -106,7 +107,6 @@ class EISSimulation:
         new_model.algebraic[V_cell] = V_cell - V
         new_model.initial_conditions[V_cell] = new_model.param.ocv_init
 
-
         # Now make current density a variable
         # To do so, we replace all instances of the current in the model with a current 
         # variable, which is obtained from the FunctionControl submodel
@@ -144,7 +144,45 @@ class EISSimulation:
 
         return new_model
 
-    def solve(self, frequencies, method="direct"):
+    def _build_matrix_problem(self, inputs_dict=None):
+        """
+        Build the mass matrix, Jacobian, vector of initial conditions, and forcing
+        vector for the impedance problem.
+
+        Parameters
+        ----------
+        inputs_dict : dict, optional
+            Any input parameters to pass to the model when solving
+        """
+        pybamm.logger.info(f"Start constructing matrix problem for {self.model_name}")
+
+        # If necessary convert inputs to a casadi vector
+        model = self.built_model
+        inputs_dict = inputs_dict or {}
+        if model.convert_to_format == "casadi":
+            inputs = vertcat(*[x for x in inputs_dict.values()])
+        else:
+            inputs = inputs_dict
+
+        # Extract mass matrix and Jacobian
+        solver = pybamm.BaseSolver()
+        solver.set_up(model, inputs=inputs_dict)
+        M = model.mass_matrix.entries
+        self.y0 = model.concatenated_initial_conditions.evaluate(0, inputs=inputs_dict)
+        J = model.jac_rhs_algebraic_eval(
+            0, self.y0, inputs
+        ).sparse()  # call the Jacobian and return a (sparse) matrix
+        # Convert to csc for efficiency in later methods
+        self.M = csc_matrix(M)
+        self.J = csc_matrix(J)
+        # Add forcing on the current density variable, which is the
+        # final entry by construction
+        self.b = np.zeros_like(self.y0)
+        self.b[-1] = -1
+
+        pybamm.logger.info(f"Finish constructing matrix problem for {self.model_name}")
+
+    def solve(self, frequencies, method="direct", inputs=None):
         """
         Compute the impedance at the given frequencies by solving problem
 
@@ -162,6 +200,8 @@ class EISSimulation:
         method : str, optional
             The method used to calculate the impedance. Can be 'direct', 'prebicgstab',
             'bicgstab' or 'cg'. Default is 'direct'.
+        inputs : dict, optional
+            Any input parameters to pass to the model when solving
 
         Returns
         -------
@@ -171,6 +211,8 @@ class EISSimulation:
 
         pybamm.logger.info(f"Start calculating impedance for {self.model_name}")
         timer = pybamm.Timer()
+
+        self._build_matrix_problem(inputs_dict=inputs)
 
         if method == "direct":
             zs = []
@@ -191,6 +233,7 @@ class EISSimulation:
             )
 
         self.solution = np.array(zs) 
+
 
         # Store solve time as an attribute
         self.solve_time = timer.time()
@@ -281,25 +324,16 @@ class EISSimulation:
             z = -sol[-2][0] / sol[-1][0]
             zs.append(z)
 
-        return zs
+        return self.zs
 
-    def nyquist_plot(self, ax=None, marker="o", linestyle="None", **kwargs):
+    def nyquist_plot(self, **kwargs):
         """
         A method to quickly creates a nyquist plot using the results of the simulation.
         Calls :meth:`pbeis.nyquist_plot`.
 
         Parameters
         ----------
-        ax : matplotlib Axis, optional
-            The axis on which to put the plot. If None, a new figure
-            and axis is created.
-        marker : str, optional
-            The marker to use for the plot. Default is 'o'
-        linestyle : str, optional
-            The linestyle to use for the plot. Default is 'None'
         kwargs
-            Keyword arguments, passed to plt.scatter.
+            Keyword arguments, passed to pbeis.nyquist_plot.
         """
-        return pbeis.nyquist_plot(
-            self.solution, ax=None, marker=marker, linestyle=linestyle, **kwargs
-        )
+        return pbeis.nyquist_plot(self.solution, **kwargs)
