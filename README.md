@@ -1,13 +1,6 @@
 # PyBaMM EIS
 PyBaMM EIS rapidly calculates the electrochemical impedance of any battery model defined using PyBaMM.
 
-
-This code was developed as part of the Oxford Mathematics Summer Project _"Efficient Linear Algebra Methods to Determine Li-ion Battery Behaviour"_. 
-
-Student: Rishit Dhoot
-
-Supervisors: Prof Colin Please and Dr. Robert Timms
-
 ## 🔋 Using PyBaMM EIS
 The easiest way to use PyBaMM EIS is to compute the impedance of a model of your choice with the default parameters:
 ```python3
@@ -42,7 +35,7 @@ To install the requirements on Linux/Mac OS use the following terminal commands:
 
 1. Clone the repository
 ```bash
-git clone https://github.com/rish31415/pybamm-eis
+git clone https://github.com/pybamm-team/pybamm-eis
 ```
 2. Change into the `pybamm-eis` directory 
 ```bash
@@ -66,7 +59,7 @@ To install the requirements on Windows use the following commands:
 
 1. Clone the repository
 ```bash
-git clone https://github.com/rish31415/pybamm-eis
+git clone https://github.com/pybamm-team/pybamm-eis
 ```
 2. Change into the `pybamm-eis` directory 
 ```bash
@@ -95,6 +88,20 @@ To install as a developer follow the instructions above, replacing the final ste
 pip install -e .
 ```
 This will allow you to edit the code locally.
+## 🎉 Acknowledgments
+This code was developed as part of the Oxford Mathematics Summer Project _"Efficient Linear Algebra Methods to Determine Li-ion Battery Behaviour"_. 
+
+Student: Rishit Dhoot
+Supervisors: Prof Colin Please and Dr. Robert Timms
+## 🛠️ Contributing to PyBaMM
+
+If you'd like to help us develop PyBaMM by adding new methods, writing documentation, or fixing embarrassing bugs, please have a look at these [guidelines](https://github.com/pybamm-team/PyBaMM/blob/develop/CONTRIBUTING.md) first.
 
 ## 📫 Get in touch
-If you have any questions, or would like to know more about the project, please get in touch via email <timms@maths.ox.ac.uk>.
+
+For any questions, comments, suggestions or bug reports, please see the
+[contact page](https://www.pybamm.org/community).
+
+## 📃 License
+
+pybamm-eis is fully open source. For more information about its license, see [LICENSE](https://github.com/pybamm-team/pybamm-eis/blob/main/LICENSE.md).
