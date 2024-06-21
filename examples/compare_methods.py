@@ -1,9 +1,11 @@
-import pbeis
-import pybamm
-import numpy as np
-import matplotlib.pyplot as plt
 import time as timer
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pybamm
 from scipy.fft import fft
+
+import pbeis
 
 # Set up
 model = pybamm.lithium_ion.SPM(options={"surface form": "differential"}, name="SPM")
@@ -11,13 +13,13 @@ parameter_values = pybamm.ParameterValues("Marquis2019")
 frequencies = np.logspace(-4, 2, 30)
 
 # Time domain
-I = 50 * 1e-3
+I_app = 50 * 1e-3
 number_of_periods = 20
 samples_per_period = 16
 
 
 def current_function(t):
-    return I * pybamm.sin(2 * np.pi * pybamm.InputParameter("Frequency [Hz]") * t)
+    return I_app * pybamm.sin(2 * np.pi * pybamm.InputParameter("Frequency [Hz]") * t)
 
 
 parameter_values["Current function [A]"] = current_function

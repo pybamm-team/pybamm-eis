@@ -1,6 +1,7 @@
-import pbeis
-import pybamm
 import matplotlib.pyplot as plt
+import pybamm
+
+import pbeis
 
 # Load model
 model = pybamm.lithium_ion.SPM(options={"surface form": "differential"})

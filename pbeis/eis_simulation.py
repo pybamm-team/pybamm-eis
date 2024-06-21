@@ -1,10 +1,12 @@
-import pybamm
-import pbeis
-import numpy as np
 import time
-from scipy.sparse.linalg import splu
-from scipy.sparse import csc_matrix
+
+import numpy as np
+import pybamm
 from casadi import vertcat
+from scipy.sparse import csc_matrix
+from scipy.sparse.linalg import splu
+
+import pbeis
 
 
 class EISSimulation:
@@ -123,11 +125,11 @@ class EISSimulation:
         # Add an algebraic equation for the current variable
         # External circuit submodels are always equations on the current
         I_var = new_model.variables["Current variable [A]"]
-        I = new_model.variables["Current [A]"]
+        I_ = new_model.variables["Current [A]"]
         I_applied = pybamm.FunctionParameter(
             "Current function [A]", {"Time [s]": pybamm.t}
         )
-        new_model.algebraic[I_var] = I - I_applied
+        new_model.algebraic[I_var] = I_ - I_applied
         new_model.initial_conditions[I_var] = 0
 
         pybamm.logger.info("Finish setting up {} for EIS".format(self.model_name))
