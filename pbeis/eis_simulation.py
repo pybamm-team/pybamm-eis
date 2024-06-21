@@ -62,11 +62,21 @@ class EISSimulation:
         sim.build()
         self.built_model = sim.built_model
 
-        # Get scale factor for the impedance (PyBaMM model may have set scales for the
-        # voltage and current variables)
-        V_scale = getattr(self.model.variables["Voltage [V]"], "scale", 1)
-        I_scale = getattr(self.model.variables["Current [A]"], "scale", 1)
-        self.z_scale = parameter_values.evaluate(V_scale / I_scale)
+        # Extract mass matrix and Jacobian
+        solver = pybamm.BaseSolver()
+        solver.set_up(self.built_model)
+        M = self.built_model.mass_matrix.entries
+        self.y0 = self.built_model.concatenated_initial_conditions.entries
+        J = self.built_model.jac_rhs_algebraic_eval(
+            0, self.y0, []
+        ).sparse()  # call the Jacobian and return a (sparse) matrix
+        # Convert to csc for efficiency in later methods
+        self.M = csc_matrix(M)
+        self.J = csc_matrix(J)
+        # Add forcing on the current density variable, which is the
+        # final entry by construction
+        self.b = np.zeros_like(self.y0)
+        self.b[-1] = -1
 
         # Set setup time
         self.set_up_time = timer.time()
@@ -90,15 +100,15 @@ class EISSimulation:
         new_model = model.new_copy()
 
         # Create a voltage variable
-        V_cell = pybamm.Variable("Voltage variable [V]")
-        new_model.variables["Voltage variable [V]"] = V_cell
+        V_cell = pybamm.Variable("Voltage variable")
+        new_model.variables["Voltage variable"] = V_cell
         V = new_model.variables["Voltage [V]"]
         # Add an algebraic equation for the voltage variable
         new_model.algebraic[V_cell] = V_cell - V
         new_model.initial_conditions[V_cell] = new_model.param.ocv_init
 
         # Now make current density a variable
-        # To do so, we replace all instances of the current in the model with a current
+        # To do so, we replace all instances of the current in the model with a current 
         # variable, which is obtained from the FunctionControl submodel
 
         # Create the FunctionControl submodel and extract variables
@@ -222,7 +232,8 @@ class EISSimulation:
                 f"but is '{method}'",
             )
 
-        self.solution = np.array(zs) * self.z_scale
+        self.solution = np.array(zs) 
+
 
         # Store solve time as an attribute
         self.solve_time = timer.time()
