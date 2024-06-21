@@ -1,6 +1,7 @@
-import pbeis
-import pybamm
 import matplotlib.pyplot as plt
+import pybamm
+
+import pbeis
 
 # Load models and parameters
 models = [

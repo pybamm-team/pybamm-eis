@@ -1,8 +1,8 @@
 #
 # Replace a symbol
 #
-import pybamm
 import numpy as np
+import pybamm
 
 
 class SymbolReplacer(object):
