@@ -1,10 +1,7 @@
-#
-# Replace a symbol
-#
 import pybamm
 
 
-class SymbolReplacer(object):
+class SymbolReplacer:
     """
     Helper class to replace all instances of one or more symbols in an expression tree
     with another symbol, as defined by the dictionary `symbol_replacement_map`
@@ -40,9 +37,7 @@ class SymbolReplacer(object):
             If True, replace the parameters in the model in place. Otherwise, return a
             new model with parameter values set. Default is True.
         """
-        pybamm.logger.info(
-            "Start replacing symbols in {}".format(unprocessed_model.name)
-        )
+        pybamm.logger.info(f"Start replacing symbols in {unprocessed_model.name}")
 
         # set up inplace vs not inplace
         if inplace:
@@ -55,22 +50,20 @@ class SymbolReplacer(object):
 
         new_rhs = {}
         for variable, equation in unprocessed_model.rhs.items():
-            pybamm.logger.verbose("Replacing symbols in {!r} (rhs)".format(variable))
+            pybamm.logger.verbose(f"Replacing symbols in {variable!r} (rhs)")
             new_rhs[self.process_symbol(variable)] = self.process_symbol(equation)
         model.rhs = new_rhs
 
         new_algebraic = {}
         for variable, equation in unprocessed_model.algebraic.items():
-            pybamm.logger.verbose(
-                "Replacing symbols in {!r} (algebraic)".format(variable)
-            )
+            pybamm.logger.verbose(f"Replacing symbols in {variable!r} (algebraic)")
             new_algebraic[self.process_symbol(variable)] = self.process_symbol(equation)
         model.algebraic = new_algebraic
 
         new_initial_conditions = {}
         for variable, equation in unprocessed_model.initial_conditions.items():
             pybamm.logger.verbose(
-                "Replacing symbols in {!r} (initial conditions)".format(variable)
+                f"Replacing symbols in {variable!r} (initial conditions)"
             )
             if self.process_initial_conditions:
                 new_initial_conditions[
@@ -84,15 +77,13 @@ class SymbolReplacer(object):
 
         new_variables = {}
         for variable, equation in unprocessed_model.variables.items():
-            pybamm.logger.verbose(
-                "Replacing symbols in {!r} (variables)".format(variable)
-            )
+            pybamm.logger.verbose(f"Replacing symbols in {variable!r} (variables)")
             new_variables[variable] = self.process_symbol(equation)
         model.variables = new_variables
 
         new_events = []
         for event in unprocessed_model.events:
-            pybamm.logger.verbose("Replacing symbols in event'{}''".format(event.name))
+            pybamm.logger.verbose(f"Replacing symbols in event'{event.name}''")
             new_events.append(
                 pybamm.Event(
                     event.name, self.process_symbol(event.expression), event.event_type
@@ -100,7 +91,7 @@ class SymbolReplacer(object):
             )
         model.events = new_events
 
-        pybamm.logger.info("Finish replacing symbols in {}".format(model.name))
+        pybamm.logger.info(f"Finish replacing symbols in {model.name}")
 
         return model
 
@@ -121,7 +112,7 @@ class SymbolReplacer(object):
                 try:
                     bc, typ = bcs[side]
                     pybamm.logger.verbose(
-                        "Replacing symbols in {!r} ({} bc)".format(variable, side)
+                        f"Replacing symbols in {variable!r} ({side} bc)"
                     )
                     processed_bc = (self.process_symbol(bc), typ)
                     new_boundary_conditions[processed_variable][side] = processed_bc
@@ -132,7 +123,7 @@ class SymbolReplacer(object):
                         pass
                     # do raise error otherwise (e.g. can't process symbol)
                     else:  # pragma: no cover
-                        raise KeyError(err)
+                        raise KeyError(err) from err
 
         return new_boundary_conditions
 
