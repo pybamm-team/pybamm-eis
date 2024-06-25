@@ -18,6 +18,13 @@ dev = [
     "pytest-html",
     "pytest-cov",
 ]
+docs = [
+    # Sphinx extensions
+    "autodoc",
+    "mathjax",
+    # Third-party extensions
+    "myst-parser",
+]
 
 [tools.setuptools]
 packages = [
@@ -27,12 +34,3 @@ packages = [
 [tool.setuptools.dynamic]
 version = {attr = "pbeis.version.__version__"}
 readme = {file = ["README.md"], content-type = "text/markdown"}
-
-[project.optional-dependencies]
-docs = [
-    # Sphinx extensions
-    "autodoc",
-    "mathjax",
-    # Third-party extensions
-    "myst_parser",
-    ]
