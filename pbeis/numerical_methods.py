@@ -6,29 +6,32 @@ def empty():
     pass
 
 
-def bicgstab(A, b, start_point=None, callback=empty, tol=10**-3):
+def bicgstab(A, b, start_point=None, callback=None, tol=1e-3):
     """
-    Uses the BicgSTAB method to solve Ax = b
+    Solves the linear equation Ax = b using the BiCGSTAB method.
 
     Parameters
     ----------
-    A : scipy sparse csr matrix
-        A square matrix.
-    b : numpy nx1 array
-    start_point : numpy nx1 array, optional
-        Where the iteration starts. If not provided the initial guess will be zero.
-    callback : function, optional
-        a function callback(xk) that can be written to happen each iteration.
-        The default is empty.
+    A : scipy.sparse.csr_matrix
+        A square matrix represented as a SciPy sparse CSR matrix.
+    b : numpy.ndarray
+        Right-hand side vector in the equation Ax = b, expected to be an n x 1 dimensional array.
+    start_point : numpy.ndarray, optional
+        The starting guess for the iteration. Defaults to a zero vector if not provided.
+    callback : callable, optional
+        A function `callback(xk)` that is called after each iteration, where `xk` is the current solution vector.
+        If no function is provided, no action is taken at each iteration.
     tol : float, optional
-        A tolerance at which to stop the iteration. The default is 10**-3.
+        The tolerance level for convergence. The iteration will stop when the residual is below this tolerance.
+        Default is 1e-3.
 
     Returns
     -------
-    xk : numpy nx1 array
-        The solution of Ax = b.
-
+    xk : numpy.ndarray
+        The solution vector to the equation Ax = b, as an n x 1 dimensional array.
     """
+    callback = callback or empty
+
     # The default start point is b unless specified otherwise
     if start_point is None:
         start_point = np.zeros_like(b)
@@ -82,32 +85,35 @@ def bicgstab(A, b, start_point=None, callback=empty, tol=10**-3):
     return xk
 
 
-def prebicgstab(A, b, LU, start_point=None, callback=empty, tol=1e-3):
+def prebicgstab(A, b, LU, start_point=None, callback=None, tol=1e-3):
     """
-    Uses the preconditioned BicgSTAB method to solve Ax = b. The preconditioner
-    is of the form LU, or just of the form L.
+    Solves the linear equation Ax = b using the preconditioned BiCGSTAB method.
+    The preconditioner is specified as LU, which could be the form of an LU decomposition.
 
     Parameters
     ----------
-    A : scipy sparse csr matrix
+    A : scipy.sparse.csr_matrix
         A square matrix.
-    b : numpy nx1 array
-    LU : scipy sparse csr matrix
-        The LU decomposition (typically a superLU object)
-    start_point : numpy nx1 array, optional
-        Where the iteration starts. If not provided the initial guess will be zero.
-    callback : function, optional
-        a function callback(xk) that can be written to happen each iteration.
-        The default is empty.
+    b : numpy.ndarray
+        Right-hand side vector in the equation Ax = b, expected to be an n x 1 dimensional array.
+    LU : scipy.sparse.csr_matrix
+        The LU decomposition of A, typically a scipy.sparse.linalg.SuperLU object.
+    start_point : numpy.ndarray, optional
+        The starting guess for the iteration. Defaults to a zero vector if not provided.
+    callback : callable, optional
+        A function callback(xk) that is called after each iteration, where `xk` is the current solution vector.
+        The default behavior is to perform no action on callback.
     tol : float, optional
-        A tolerance at which to stop the iteration. The default is 1e-3.
+        The tolerance level for convergence. The iteration will stop when the residual is below this tolerance.
+        Default is 1e-3.
 
     Returns
     -------
-    xk : numpy nx1 array
-        The solution of Ax = b.
-
+    xk : numpy.ndarray
+        The solution vector to the equation Ax = b, as an n x 1 dimensional array.
     """
+    callback = callback or empty
+
     # The default start point is b unless specified otherwise
     if start_point is None:
         start_point = np.zeros_like(b)
@@ -130,7 +136,7 @@ def prebicgstab(A, b, LU, start_point=None, callback=empty, tol=1e-3):
     max_num_iter = 2 * np.shape(b)[0]
 
     # Check the format of LU (super LU or scipy sparse matrix)
-    if type(LU) == scipy.sparse.linalg.SuperLU:
+    if isinstance(LU, scipy.sparse.linalg.SuperLU):
         superLU = True
     else:
         superLU = False
