@@ -23,12 +23,11 @@ sphinx:
 # Declare the Python requirements required to build the documentation
 python:
   install:
-    - method: pip
-      path: .
     - packages:
       - sphinx
       - myst-parser
 
 # Custom build command to use the makefile
-commands:
-  - make -C docs html
+build:
+  commands:
+    - make -C docs html
