@@ -1,6 +1,3 @@
-#
-# Replace a symbol
-#
 import pybamm
 
 
