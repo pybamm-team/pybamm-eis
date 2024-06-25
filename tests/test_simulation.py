@@ -6,7 +6,6 @@ import pytest
 
 
 def test_compare_methods():
-
     # Set up
     model = pybamm.lithium_ion.SPM(options={"surface form": "differential"}, name="SPM")
     parameter_values = pybamm.ParameterValues("Marquis2019")
