@@ -6,98 +6,32 @@ def empty():
     pass
 
 
-def conjugate_gradient(A, b, start_point=None, callback=empty, tol=1e-3):
+def bicgstab(A, b, start_point=None, callback=None, tol=1e-3):
     """
-    Uses the conjugate gradient method to solve Ax = b. Should not be used
-    unless A is Hermitian. If A is not hermitian, use BicgSTAB instead.
-    For best performance A should be a scipy csr sparse matrix.
+    Solves the linear equation Ax = b using the BiCGSTAB method.
 
     Parameters
     ----------
-    A : scipy sparse csr matrix
-        A square matrix.
-    b : numpy nx1 array
-    start_point : numpy nx1 array, optional
-        Where the iteration starts.  If not provided the initial guess will be zero.
-    callback : function, optional
-        a function callback(xk) that can be written to happen each iteration.
-        The default is empty.
+    A : scipy.sparse.csr_matrix
+        A square matrix represented as a SciPy sparse CSR matrix.
+    b : numpy.ndarray
+        Right-hand side vector in the equation Ax = b, expected to be an n x 1 dimensional array.
+    start_point : numpy.ndarray, optional
+        The starting guess for the iteration. Defaults to a zero vector if not provided.
+    callback : callable, optional
+        A function `callback(xk)` that is called after each iteration, where `xk` is the current solution vector.
+        If no function is provided, no action is taken at each iteration.
     tol : float, optional
-        A tolerance at which to stop the iteration. The default is 1e-3.
+        The tolerance level for convergence. The iteration will stop when the residual is below this tolerance.
+        Default is 1e-3.
 
     Returns
     -------
-    xk : numpy nx1 array
-        The solution of Ax = b.
-
+    xk : numpy.ndarray
+        The solution vector to the equation Ax = b, as an n x 1 dimensional array.
     """
+    callback = callback or empty
 
-    # The default start point is b unless specified otherwise
-    if start_point is None:
-        start_point = np.zeros_like(b)
-
-    xk = np.array(start_point)
-    # Find the residual and set the search direction to the residual
-    rk = b - A @ xk
-    pk = rk
-
-    max_num_iter = np.shape(b)[0]
-    rk1rk1 = np.dot(np.conj(rk), rk)
-
-    # start the iterative step
-    for k in range(max_num_iter):
-        # Find alpha_k, the distance to move in the search direction
-        Apk = A @ pk
-        rkrk = rk1rk1
-        pkApk = np.dot(np.conj(pk), Apk)
-
-        alpha_k = rkrk / pkApk
-
-        xk = xk + alpha_k * pk
-
-        # run the callback
-        callback(xk)
-
-        # Stop if the change in the last entry is under tolerance
-        if alpha_k * pk[-1] < tol:
-            break
-        else:
-            # Find the new residual
-            rk = rk - alpha_k * Apk
-
-            rk1rk1 = np.dot(np.conj(rk), rk)
-
-            beta_k = rk1rk1 / rkrk
-
-            # Update the search direction
-            pk = rk + beta_k * pk
-
-    return xk
-
-
-def bicgstab(A, b, start_point=None, callback=empty, tol=10**-3):
-    """
-    Uses the BicgSTAB method to solve Ax = b
-
-    Parameters
-    ----------
-    A : scipy sparse csr matrix
-        A square matrix.
-    b : numpy nx1 array
-    start_point : numpy nx1 array, optional
-        Where the iteration starts. If not provided the initial guess will be zero.
-    callback : function, optional
-        a function callback(xk) that can be written to happen each iteration.
-        The default is empty.
-    tol : float, optional
-        A tolerance at which to stop the iteration. The default is 10**-3.
-
-    Returns
-    -------
-    xk : numpy nx1 array
-        The solution of Ax = b.
-
-    """
     # The default start point is b unless specified otherwise
     if start_point is None:
         start_point = np.zeros_like(b)
@@ -118,7 +52,7 @@ def bicgstab(A, b, start_point=None, callback=empty, tol=10**-3):
     # iterations as follows
     max_num_iter = 2 * np.shape(b)[0]
 
-    for k in range(1, max_num_iter + 1):
+    for _ in range(1, max_num_iter + 1):
         # Calculate the next search direction pk
         rhok1 = rhok
         rhok = np.dot(r0.T, rk)
@@ -151,32 +85,35 @@ def bicgstab(A, b, start_point=None, callback=empty, tol=10**-3):
     return xk
 
 
-def prebicgstab(A, b, LU, start_point=None, callback=empty, tol=1e-3):
+def prebicgstab(A, b, LU, start_point=None, callback=None, tol=1e-3):
     """
-    Uses the preconditioned BicgSTAB method to solve Ax = b. The preconditioner
-    is of the form LU, or just of the form L.
+    Solves the linear equation Ax = b using the preconditioned BiCGSTAB method.
+    The preconditioner is specified as LU, which could be the form of an LU decomposition.
 
     Parameters
     ----------
-    A : scipy sparse csr matrix
+    A : scipy.sparse.csr_matrix
         A square matrix.
-    b : numpy nx1 array
-    LU : scipy sparse csr matrix
-        The LU decomposition (typically a superLU object)
-    start_point : numpy nx1 array, optional
-        Where the iteration starts. If not provided the initial guess will be zero.
-    callback : function, optional
-        a function callback(xk) that can be written to happen each iteration.
-        The default is empty.
+    b : numpy.ndarray
+        Right-hand side vector in the equation Ax = b, expected to be an n x 1 dimensional array.
+    LU : scipy.sparse.csr_matrix
+        The LU decomposition of A, typically a scipy.sparse.linalg.SuperLU object.
+    start_point : numpy.ndarray, optional
+        The starting guess for the iteration. Defaults to a zero vector if not provided.
+    callback : callable, optional
+        A function callback(xk) that is called after each iteration, where `xk` is the current solution vector.
+        The default behavior is to perform no action on callback.
     tol : float, optional
-        A tolerance at which to stop the iteration. The default is 1e-3.
+        The tolerance level for convergence. The iteration will stop when the residual is below this tolerance.
+        Default is 1e-3.
 
     Returns
     -------
-    xk : numpy nx1 array
-        The solution of Ax = b.
-
+    xk : numpy.ndarray
+        The solution vector to the equation Ax = b, as an n x 1 dimensional array.
     """
+    callback = callback or empty
+
     # The default start point is b unless specified otherwise
     if start_point is None:
         start_point = np.zeros_like(b)
@@ -199,13 +136,13 @@ def prebicgstab(A, b, LU, start_point=None, callback=empty, tol=1e-3):
     max_num_iter = 2 * np.shape(b)[0]
 
     # Check the format of LU (super LU or scipy sparse matrix)
-    if type(LU) == scipy.sparse.linalg.SuperLU:
+    if isinstance(LU, scipy.sparse.linalg.SuperLU):
         superLU = True
     else:
         superLU = False
 
     # Start the iterative step
-    for k in range(1, max_num_iter + 1):
+    for _ in range(1, max_num_iter + 1):
         # Calculate the search direction pk
         rhok1 = rhok
         rhok = np.dot(r0.T, rk)
