@@ -10,6 +10,7 @@ formats:
   - htmlzip
 
 build:
+  os: ubuntu-22.04
   apt_packages:
     - "graphviz"
   image: latest
@@ -22,9 +23,9 @@ build:
       - mkdir -p $READTHEDOCS_OUTPUT/pdf/
       - python -m sphinx -T -E -b latex -d docs/_build/doctrees -D language=en docs docs/build/
       - cd docs/build/ && cat latexmkrc
-      - cd docs/build/ && latexmk -r latexmkrc -pdf -f -dvi- -ps- -jobname=pybamm -interaction=nonstopmode || true
-      - test -f docs/build/pybamm.pdf && echo "pybamm.pdf exists. Copying source file to $READTHEDOCS_OUTPUT/pdf/."
-      - cp "docs/build/pybamm.pdf" $READTHEDOCS_OUTPUT/pdf/
+      - cd docs/build/ && latexmk -r latexmkrc -pdf -f -dvi- -ps- -jobname=pybamm-eis -interaction=nonstopmode || true
+      - test -f docs/build/pybamm-eis.pdf && echo "pybamm-eis.pdf exists. Copying source file to $READTHEDOCS_OUTPUT/pdf/."
+      - cp "docs/build/pybamm-eis.pdf" $READTHEDOCS_OUTPUT/pdf/
 
 python:
   install:
