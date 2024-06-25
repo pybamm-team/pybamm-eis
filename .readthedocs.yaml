@@ -9,6 +9,13 @@ formats:
   - epub
   - htmlzip
 
+python:
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs
+
 build:
   os: ubuntu-22.04
   apt_packages:
@@ -25,10 +32,3 @@ build:
       - cd docs/build/ && latexmk -r latexmkrc -pdf -f -dvi- -ps- -jobname=pybamm-eis -interaction=nonstopmode || true
       - test -f docs/build/pybamm-eis.pdf && echo "pybamm-eis.pdf exists. Copying source file to $READTHEDOCS_OUTPUT/pdf/."
       - cp "docs/build/pybamm-eis.pdf" $READTHEDOCS_OUTPUT/pdf/
-
-python:
-  install:
-    - method: pip
-      path: .
-      extra_requirements:
-        - myst-parser
