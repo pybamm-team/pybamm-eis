@@ -1,10 +1,8 @@
 Numerical Methods
 =================
 
-.. autofunction:: conjugate_gradient
+.. autofunction:: pbeis.bicgstab
 
-.. autofunction:: bicgstab
+.. autofunction:: pbeis.prebicgstab
 
-.. autofunction:: prebicgstab
-
-.. autofunction:: matrix_rescale
+.. autofunction:: pbeis.matrix_rescale
