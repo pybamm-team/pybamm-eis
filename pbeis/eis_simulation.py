@@ -86,7 +86,7 @@ class EISSimulation:
         model : :class:`pybamm.BaseModel`
             Model to set up for EIS.
         """
-        pybamm.logger.info("Start setting up {} for EIS".format(self.model_name))
+        pybamm.logger.info(f"Start setting up {self.model_name} for EIS")
 
         # Make a new copy of the model
         new_model = model.new_copy()
@@ -132,7 +132,7 @@ class EISSimulation:
         new_model.algebraic[I_var] = I_ - I_applied
         new_model.initial_conditions[I_var] = 0
 
-        pybamm.logger.info("Finish setting up {} for EIS".format(self.model_name))
+        pybamm.logger.info(f"Finish setting up {self.model_name} for EIS")
 
         return new_model
 
@@ -179,9 +179,9 @@ class EISSimulation:
         Compute the impedance at the given frequencies by solving problem
 
         .. math::
-            i \omega \tau M x = J x + b
+            i \\omega \tau M x = J x + b
 
-        where i is the imagianary unit, \omega is the frequency, \tau is the model
+        where i is the imagianary unit, \\omega is the frequency, \tau is the model
         timescale, M is the mass matrix, J is the Jacobian, x is the state vector,
         and b gives a periodic forcing in the current.
 
@@ -238,9 +238,9 @@ class EISSimulation:
         Compute the impedance at the given frequencies by solving problem
 
         .. math::
-            i \omega \tau M x = J x + b
+            i \\omega \tau M x = J x + b
 
-        using an iterative method, where i is the imagianary unit, \omega
+        using an iterative method, where i is the imagianary unit, \\omega
         is the frequency, \tau is the model timescale, M is the mass matrix,
         J is the Jacobian, x is the state vector, and b gives a periodic
         forcing in the current.

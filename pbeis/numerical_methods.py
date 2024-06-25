@@ -49,7 +49,7 @@ def bicgstab(A, b, start_point=None, callback=empty, tol=10**-3):
     # iterations as follows
     max_num_iter = 2 * np.shape(b)[0]
 
-    for k in range(1, max_num_iter + 1):
+    for _ in range(1, max_num_iter + 1):
         # Calculate the next search direction pk
         rhok1 = rhok
         rhok = np.dot(r0.T, rk)
@@ -136,7 +136,7 @@ def prebicgstab(A, b, LU, start_point=None, callback=empty, tol=1e-3):
         superLU = False
 
     # Start the iterative step
-    for k in range(1, max_num_iter + 1):
+    for _ in range(1, max_num_iter + 1):
         # Calculate the search direction pk
         rhok1 = rhok
         rhok = np.dot(r0.T, rk)
