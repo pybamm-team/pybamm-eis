@@ -18,6 +18,13 @@ dev = [
     "pytest-html",
     "pytest-cov",
 ]
+docs = [
+    # Sphinx extensions
+    "autodoc",
+    "mathjax",
+    # Third-party extensions
+    "myst-parser",
+]
 
 [tools.setuptools]
 packages = [
