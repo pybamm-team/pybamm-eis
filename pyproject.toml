@@ -9,6 +9,16 @@ dependencies = [
     "matplotlib",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "sphinx",
+    "myst-parser",
+    "nbmake",
+    "pytest-html",
+    "pytest-cov",
+]
+
 [tools.setuptools]
 packages = [
     { include = "pbeis" },

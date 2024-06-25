@@ -54,7 +54,7 @@ time_elapsed = end_time - start_time
 print("Time domain method: ", time_elapsed, "s")
 
 # Frequency domain
-methods = ["direct"]
+methods = ["direct", "bicgstab", "prebicgstab"]
 impedances_freqs = []
 for method in methods:
     start_time = timer.time()

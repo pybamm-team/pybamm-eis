@@ -191,7 +191,7 @@ class EISSimulation:
             The frequencies at which to compute the impedance.
         method : str, optional
             The method used to calculate the impedance. Can be 'direct', 'prebicgstab',
-            'bicgstab' or 'cg'. Default is 'direct'.
+            or 'bicgstab'. Default is 'direct'.
         inputs : dict, optional
             Any input parameters to pass to the model when solving
 
@@ -216,11 +216,11 @@ class EISSimulation:
                 # entry and the current density variable is the final entry
                 z = -x[-2][0] / x[-1][0]
                 zs.append(z)
-        elif method in ["prebicgstab", "bicgstab", "cg"]:
+        elif method in ["prebicgstab", "bicgstab"]:
             zs = self.iterative_method(frequencies, method=method)
         else:
-            raise NotImplementedError(
-                "'method' must be 'direct', 'prebicgstab', 'bicgstab' or 'cg', ",
+            raise ValueError(
+                "'method' must be 'direct', 'prebicgstab' or 'bicgstab', ",
                 f"but is '{method}'",
             )
 
@@ -251,7 +251,6 @@ class EISSimulation:
             The frequencies at which to compute the impedance.
         method : str, optional
             The method used to calculate the impedance. Can be:
-            'cg' - conjugate gradient - only use for Hermitian matrices
             'bicgstab' - use bicgstab with no preconditioner
             'prebicgstab' - use bicgstab with a preconditioner, this is
             the default.
@@ -303,10 +302,8 @@ class EISSimulation:
                 )
                 solve_time = time.process_time() - solve_start_time
 
-            elif method == "cg":
-                sol = pbeis.conjugate_gradient(
-                    A, self.b, start_point=sol, callback=callback
-                )
+            else:
+                raise ValueError
 
             # Store number of iterations at this frequency
             iters_per_frequency.append(num_iters)
@@ -316,7 +313,7 @@ class EISSimulation:
             z = -sol[-2][0] / sol[-1][0]
             zs.append(z)
 
-        return self.zs
+        return zs
 
     def nyquist_plot(self, **kwargs):
         """
