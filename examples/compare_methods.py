@@ -10,12 +10,12 @@ import pbeis
 # Set up
 model = pybamm.lithium_ion.SPM(options={"surface form": "differential"}, name="SPM")
 parameter_values = pybamm.ParameterValues("Marquis2019")
-frequencies = np.logspace(-4, 2, 30)
+frequencies = np.logspace(-4, 3, 70)
 
 # Time domain
-I_app = 50 * 1e-3
-number_of_periods = 20
-samples_per_period = 16
+I_app = 5e-3
+number_of_periods = 10
+samples_per_period = 56
 
 
 def current_function(t):
@@ -27,7 +27,7 @@ parameter_values["Current function [A]"] = current_function
 start_time = timer.time()
 
 sim = pybamm.Simulation(
-    model, parameter_values=parameter_values, solver=pybamm.ScipySolver()
+    model, parameter_values=parameter_values, solver=pybamm.ScipySolver(atol=1e-12)
 )
 
 impedances_time = []
@@ -35,12 +35,12 @@ for frequency in frequencies:
     # Solve
     period = 1 / frequency
     dt = period / samples_per_period
-    t_eval = np.array(range(0, 1 + samples_per_period * number_of_periods)) * dt
+    t_eval = np.array(range(0, samples_per_period * number_of_periods)) * dt
     sol = sim.solve(t_eval, inputs={"Frequency [Hz]": frequency})
     # Extract final two periods of the solution
-    time = sol["Time [s]"].entries[-3 * samples_per_period - 1 :]
-    current = sol["Current [A]"].entries[-3 * samples_per_period - 1 :]
-    voltage = sol["Voltage [V]"].entries[-3 * samples_per_period - 1 :]
+    time = sol["Time [s]"].entries[-5 * samples_per_period :]
+    current = sol["Current [A]"].entries[-5 * samples_per_period :]
+    voltage = sol["Voltage [V]"].entries[-5 * samples_per_period :]
     # FFT
     current_fft = fft(current)
     voltage_fft = fft(voltage)
