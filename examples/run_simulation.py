@@ -4,7 +4,7 @@ import pybamm
 import pbeis
 
 # Load model (DFN with capacitance)
-model = pybamm.lithium_ion.DFN(options={"surface form": "differential"})
+model = pybamm.lithium_ion.SPMe(options={"surface form": "differential"})
 
 # Create simulation
 eis_sim = pbeis.EISSimulation(model)
