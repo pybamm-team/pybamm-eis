@@ -5,7 +5,7 @@ requires-python = ">=3.9"
 license = {file = "LICENSE.md"}
 dynamic = ["version", "readme"]
 dependencies = [
-    "pybamm @ git+https://github.com/pybamm-team/PyBaMM.git@088ca3827c831e1b93c4667b6f4353f64fb32cbf",
+    "pybamm==24.5",
     "matplotlib",
 ]
 
