@@ -2,6 +2,7 @@ __pycache__
 .vscode
 .idea
 
+deploy
 build
 *.egg-info
 docs/_build/
