@@ -1,5 +1,5 @@
 import pybamm
-import pbeis
+import pybammeis
 
 
 def test_symbol_replacements():
@@ -7,7 +7,7 @@ def test_symbol_replacements():
     b = pybamm.Parameter("b")
     c = pybamm.Parameter("c")
     d = pybamm.Parameter("d")
-    replacer = pbeis.SymbolReplacer({a: b, c: d})
+    replacer = pybammeis.SymbolReplacer({a: b, c: d})
 
     for symbol_in, symbol_out in [
         (a, b),  # just the symbol
@@ -24,7 +24,7 @@ def test_symbol_replacements():
     var3 = pybamm.Variable("var 3", domain="dom 1")
     conc = pybamm.concatenation(var1, var2)
 
-    replacer = pbeis.SymbolReplacer({var1: var3})
+    replacer = pybammeis.SymbolReplacer({var1: var3})
     replaced_symbol = replacer.process_symbol(conc)
     assert replaced_symbol == pybamm.concatenation(var3, var2)
 
@@ -50,7 +50,7 @@ def test_process_model():
         "d_var1": d * var1,
     }
 
-    replacer = pbeis.SymbolReplacer(
+    replacer = pybammeis.SymbolReplacer(
         {
             pybamm.Parameter("a"): pybamm.Scalar(4),
             pybamm.Parameter("b"): pybamm.Scalar(2),

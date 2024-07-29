@@ -30,8 +30,8 @@ docs = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["pbeis"]
+include = ["pybammeis"]
 
 [tool.setuptools.dynamic]
-version = {attr = "pbeis.version.__version__"}
+version = {attr = "pybammeis.version.__version__"}
 readme = {file = ["README.md"], content-type = "text/markdown"}

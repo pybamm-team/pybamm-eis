@@ -1,13 +1,13 @@
 import numpy as np
 import pybamm
 
-import pbeis
+import pybammeis
 
 # Load model (DFN with capacitance)
 model = pybamm.lithium_ion.DFN(options={"surface form": "differential"})
 
 # Create simulation
-eis_sim = pbeis.EISSimulation(model)
+eis_sim = pybammeis.EISSimulation(model)
 
 # Choose frequencies and calculate impedance
 frequencies = np.logspace(-4, 4, 30)

@@ -1,6 +1,6 @@
 Utilities
 =========
 
-.. autoclass:: pbeis.SymbolReplacer
+.. autoclass:: pybammeis.SymbolReplacer
     :members:
 

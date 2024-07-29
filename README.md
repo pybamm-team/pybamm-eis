@@ -7,13 +7,15 @@ PyBaMM EIS rapidly calculates the electrochemical impedance of any battery model
 The easiest way to use PyBaMM EIS is to compute the impedance of a model of your choice with the default parameters:
 
 ```python3
-import pbeis
+import pybammeis
 import pybamm
 import numpy as np
 
-model = pybamm.lithium_ion.DFN(options={"surface form": "differential"})  # DFN with capacitance
-eis_sim = pbeis.EISSimulation(model)
-eis_sim.solve(np.logspace(-4, 4, 30))  # calculate impedance at log-spaced frequencies
+model = pybamm.lithium_ion.DFN(
+    options={"surface form": "differential"})  # DFN with capacitance
+eis_sim = pybammeis.EISSimulation(model)
+eis_sim.solve(
+    np.logspace(-4, 4, 30))  # calculate impedance at log-spaced frequencies
 eis_sim.nyquist_plot()
 ```
 
@@ -64,7 +66,7 @@ virtualenv env
 source env/bin/activate
 ```
 
-5. Install the `pbeis` package
+5. Install the `pybammeis` package
 
 ```bash
 pip install .
@@ -100,7 +102,7 @@ python -m virtualenv env
 
 where `\path\to\env` is the path to the environment created in step 3 (e.g. `C:\Users\'Username'\env\Scripts\activate.bat`).
 
-5. Install the `pbeis` package
+5. Install the `pybammeis` package
 
 ```bash
 pip install .
@@ -120,7 +122,7 @@ This will allow you to edit the code locally.
 
 ## 📖 Documentation
 
-API documentation for the `pbeis` package can be built locally using [Sphinx](https://www.sphinx-doc.org/en/master/). To build the documentation, first change into the `docs` directory, and then execute the following command:
+API documentation for the `pybammeis` package can be built locally using [Sphinx](https://www.sphinx-doc.org/en/master/). To build the documentation, first change into the `docs` directory, and then execute the following command:
 
 ```bash
 make html

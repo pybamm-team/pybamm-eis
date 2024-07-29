@@ -1,4 +1,4 @@
-.. module:: pbeis
+.. module:: pybammeis
 
 .. _api_docs:
 
@@ -10,7 +10,7 @@ API documentation
 :Date: |today|
 
 This reference manual details functions, modules, and objects included in 
-`pbeis`, describing what they are and what they do. 
+`pybammeis`, describing what they are and what they do.
 
 .. toctree::
     :maxdepth: 2
