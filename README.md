@@ -6,16 +6,16 @@ PyBaMM EIS rapidly calculates the electrochemical impedance of any battery model
 
 The easiest way to use PyBaMM EIS is to compute the impedance of a model of your choice with the default parameters:
 
-```python3
+```python
 import pybammeis
 import pybamm
 import numpy as np
 
-model = pybamm.lithium_ion.DFN(
-    options={"surface form": "differential"})  # DFN with capacitance
+# DFN with capacitance
+model = pybamm.lithium_ion.DFN(options={"surface form": "differential"})
 eis_sim = pybammeis.EISSimulation(model)
-eis_sim.solve(
-    np.logspace(-4, 4, 30))  # calculate impedance at log-spaced frequencies
+# calculate impedance at log-spaced frequencies
+eis_sim.solve(np.logspace(-4, 4, 30))
 eis_sim.nyquist_plot()
 ```
 
@@ -43,70 +43,60 @@ PyBaMM is available on GNU/Linux, MacOS and Windows. For more detailed instructi
 To install the requirements on Linux/Mac OS use the following terminal commands:
 
 1. Clone the repository
-
-```bash
-git clone https://github.com/pybamm-team/pybamm-eis
-```
+    ```bash
+    git clone https://github.com/pybamm-team/pybamm-eis
+    ```
 
 2. Change into the `pybamm-eis` directory
-
-```bash
-cd pybamm-eis
-```
+    ```bash
+    cd pybamm-eis
+    ```
 
 3. Create a virtual environment
-
-```bash
-virtualenv env
-```
+    ```bash
+    virtualenv env
+    ```
 
 4. Activate the virtual environment
-
-```bash
-source env/bin/activate
-```
+    ```bash
+    source env/bin/activate
+    ```
 
 5. Install the `pybammeis` package
-
-```bash
-pip install .
-```
+    ```bash
+    pip install .
+    ```
 
 ### Windows
 
 To install the requirements on Windows use the following commands:
 
 1. Clone the repository
-
-```bash
-git clone https://github.com/pybamm-team/pybamm-eis
-```
+    ```bash
+    git clone https://github.com/pybamm-team/pybamm-eis
+    ```
 
 2. Change into the `pybamm-eis` directory
-
-```bash
-cd pybamm-eis
-```
+    ```bash
+    cd pybamm-eis
+    ```
 
 3. Create a virtual environment
-
-```bash
-python -m virtualenv env
-```
+    ```bash
+    python -m virtualenv env
+    ```
 
 4. Activate the virtual environment
-
-```bash
-\path\to\env\Scripts\activate
-```
-
-where `\path\to\env` is the path to the environment created in step 3 (e.g. `C:\Users\'Username'\env\Scripts\activate.bat`).
+    ```bash
+    \path\to\env\Scripts\activate
+    ```
+    where `\path\to\env` is the path to the environment created in step 3
+    (e.g. `C:\Users\'Username'\env\Scripts\activate.bat`).
 
 5. Install the `pybammeis` package
-
-```bash
-pip install .
-```
+    ```bash
+    pip install .
+    ```
 
 As an alternative, you can set up [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/about). This allows you to run a full Linux distribution within Windows.
 
