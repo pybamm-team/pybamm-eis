@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pybammeis"
 description = "PyBaMM EIS"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {file = "LICENSE.md"}
 dynamic = ["version", "readme"]
 dependencies = [
