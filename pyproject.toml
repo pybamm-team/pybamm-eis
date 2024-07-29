@@ -1,7 +1,11 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "pbeis"
+name = "pybammeis"
 description = "PyBaMM EIS"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {file = "LICENSE.md"}
 dynamic = ["version", "readme"]
 dependencies = [
@@ -19,18 +23,15 @@ dev = [
     "pytest-cov",
 ]
 docs = [
-    # Sphinx extensions
     "autodoc",
     "mathjax",
-    # Third-party extensions
     "myst-parser",
 ]
 
-[tools.setuptools]
-packages = [
-    { include = "pbeis" },
-]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pybammeis"]
 
 [tool.setuptools.dynamic]
-version = {attr = "pbeis.version.__version__"}
+version = {attr = "pybammeis.version.__version__"}
 readme = {file = ["README.md"], content-type = "text/markdown"}

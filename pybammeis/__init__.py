@@ -1,4 +1,4 @@
-from pbeis.version import __version__
+from pybammeis.version import __version__
 
 from .eis_simulation import EISSimulation
 from .numerical_methods import bicgstab, prebicgstab

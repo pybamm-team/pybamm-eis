@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pybamm
 
-import pbeis
+import pybammeis
 
 # Load model
 model = pybamm.lithium_ion.SPM(options={"surface form": "differential"})
@@ -23,7 +23,7 @@ parameter_values.update(
 )
 
 # Create simulation
-eis_sim = pbeis.EISSimulation(model, parameter_values=parameter_values)
+eis_sim = pybammeis.EISSimulation(model, parameter_values=parameter_values)
 
 # Choose frequencies and calculate impedance, looping over input parameter values
 # and adding the results to a Nyquist plot

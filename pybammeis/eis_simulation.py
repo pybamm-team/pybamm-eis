@@ -6,7 +6,7 @@ from casadi import vertcat
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import splu
 
-import pbeis
+import pybammeis
 
 
 class EISSimulation:
@@ -117,7 +117,7 @@ class EISSimulation:
         }
         # Don't replace initial conditions, as these should not contain
         # Variable objects
-        replacer = pbeis.SymbolReplacer(
+        replacer = pybammeis.SymbolReplacer(
             symbol_replacement_map, process_initial_conditions=False
         )
         replacer.process_model(new_model, inplace=True)
@@ -286,7 +286,7 @@ class EISSimulation:
                 num_iters += 1
 
             if method == "bicgstab":
-                sol = pbeis.bicgstab(A, self.b, start_point=sol, callback=callback)
+                sol = pybammeis.bicgstab(A, self.b, start_point=sol, callback=callback)
             elif method == "prebicgstab":
                 # Update preconditioner based on solve time
                 if lu_time <= solve_time:
@@ -297,7 +297,7 @@ class EISSimulation:
 
                 # Solve
                 solve_start_time = time.process_time()
-                sol = pbeis.prebicgstab(
+                sol = pybammeis.prebicgstab(
                     A, self.b, lu, start_point=sol, callback=callback
                 )
                 solve_time = time.process_time() - solve_start_time
@@ -318,11 +318,11 @@ class EISSimulation:
     def nyquist_plot(self, **kwargs):
         """
         A method to quickly creates a nyquist plot using the results of the simulation.
-        Calls :meth:`pbeis.nyquist_plot`.
+        Calls :meth:`pybammeis.nyquist_plot`.
 
         Parameters
         ----------
         kwargs
-            Keyword arguments, passed to pbeis.nyquist_plot.
+            Keyword arguments, passed to pybammeis.nyquist_plot.
         """
-        return pbeis.nyquist_plot(self.solution, **kwargs)
+        return pybammeis.nyquist_plot(self.solution, **kwargs)

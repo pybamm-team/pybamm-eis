@@ -1,6 +1,6 @@
 Numerical Methods
 =================
 
-.. autofunction:: pbeis.bicgstab
+.. autofunction:: pybammeis.bicgstab
 
-.. autofunction:: pbeis.prebicgstab
+.. autofunction:: pybammeis.prebicgstab

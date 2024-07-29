@@ -1,5 +1,5 @@
 Simulation
 ==========
 
-.. autoclass:: pbeis.EISSimulation
+.. autoclass:: pybammeis.EISSimulation
     :members:

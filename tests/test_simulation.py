@@ -1,6 +1,6 @@
 import pybamm
 import numpy as np
-import pbeis
+import pybammeis
 from scipy.fft import fft
 import pytest
 
@@ -50,7 +50,7 @@ def test_compare_methods():
     methods = ["direct"]
     impedances_freqs = {}
     for method in methods:
-        eis_sim = pbeis.EISSimulation(model, parameter_values=parameter_values)
+        eis_sim = pybammeis.EISSimulation(model, parameter_values=parameter_values)
         impedances_freq = eis_sim.solve(frequencies, method)
         impedances_freqs[method] = impedances_freq
 
@@ -75,14 +75,14 @@ def test_solve_with_inputs():
             ),
         },
     )
-    eis_sim = pbeis.EISSimulation(model, parameter_values=parameter_values)
+    eis_sim = pybammeis.EISSimulation(model, parameter_values=parameter_values)
     frequencies = np.logspace(-4, 4, 30)
     eis_sim.solve(frequencies, inputs={"C_dl": 0.1})
 
 
 def test_bad_method():
     model = pybamm.lithium_ion.DFN(options={"surface form": "differential"})
-    eis_sim = pbeis.EISSimulation(model)
+    eis_sim = pybammeis.EISSimulation(model)
     frequencies = np.logspace(-4, 4, 30)
     with pytest.raises(ValueError, match="'method' must be"):
         eis_sim.solve(frequencies, method="bad_method")

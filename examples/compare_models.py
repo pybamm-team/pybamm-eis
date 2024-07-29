@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pybamm
 
-import pbeis
+import pybammeis
 
 # Load models and parameters
 models = [
@@ -41,7 +41,7 @@ frequencies = np.logspace(-4, 4, 30)
 impedances = []
 for model in models:
     print(f"Start calculating impedance for {model.name}")
-    eis_sim = pbeis.EISSimulation(model, parameter_values=parameter_values)
+    eis_sim = pybammeis.EISSimulation(model, parameter_values=parameter_values)
     impedances_freq = eis_sim.solve(
         frequencies,
     )
@@ -59,7 +59,7 @@ for model in models:
 # Compare
 _, ax = plt.subplots()
 for i, model in enumerate(models):
-    ax = pbeis.nyquist_plot(
+    ax = pybammeis.nyquist_plot(
         impedances[i], ax=ax, linestyle="-", label=f"{model.name}", alpha=0.7
     )
 ax.legend()

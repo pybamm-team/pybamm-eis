@@ -1,4 +1,4 @@
 Plotting
 ========
 
-.. autofunction:: pbeis.nyquist_plot
+.. autofunction:: pybammeis.nyquist_plot
