@@ -29,10 +29,10 @@ def j0(c_e, c_s_surf, c_s_max, T):
 
 parameter_values.update(
     {
-        "Positive electrode reference exchange-current density [A.m-2]": 5,
-        "Positive electrode exchange-current density [A.m-2]": pybamm.InputParameter(
+        "Positive electrode reference exchange-current density [A.m-2]": pybamm.InputParameter(
             "j0_ref"
         ),
+        "Positive electrode exchange-current density [A.m-2]": j0,
         "Positive electrode double-layer capacity [F.m-2]": pybamm.InputParameter(
             "C_dl"
         ),
