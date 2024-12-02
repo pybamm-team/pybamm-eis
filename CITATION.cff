@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+title: 'PyBaMM EIS: Efficient Linear Algebra Methods to Determine Li-ion Battery Behaviour'
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Rishit
+    family-names: Dhoot
+  - given-names: Robert
+    family-names: Timms
+  - given-names: Colin
+    family-names: Please
+version: "0.1.5" # Update this when you release a new version
+repository-code: 'https://www.github.com/pybamm-team/pybamm-eis'
