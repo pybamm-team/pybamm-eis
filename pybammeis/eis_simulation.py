@@ -42,13 +42,13 @@ class EISSimulation:
     def __init__(
         self,
         model,
-        three_electrode=None,
-        reference_electrode_location=0.5,
         parameter_values=None,
         geometry=None,
         submesh_types=None,
         var_pts=None,
         spatial_methods=None,
+        three_electrode=None,
+        reference_electrode_location=0.5,
     ):
         # Set attributes
         self.model_name = model.name
@@ -58,11 +58,11 @@ class EISSimulation:
 
         # Set up the model for EIS
         pybamm.logger.info(f"Start setting up {self.model_name} for EIS")
+        parameter_values = parameter_values or model.default_parameter_values
         L_n = parameter_values["Negative electrode thickness [m]"]
         L_s = parameter_values["Separator thickness [m]"]
-        L_p = parameter_values["Positive electrode thickness [m]"]
         self.model = self.set_up_model_for_eis(
-            model, three_electrode, reference_electrode_location, L_n, L_s, L_p
+            model, three_electrode, reference_electrode_location, L_n, L_s
         )
 
         # Create and build a simulation to conviniently build the model
@@ -91,7 +91,7 @@ class EISSimulation:
         pybamm.logger.info(f"Set-up time: {self.set_up_time}")
 
     def set_up_model_for_eis(
-        self, model, three_electrode, reference_electrode_location, L_n, L_s, L_p
+        self, model, three_electrode, reference_electrode_location, L_n, L_s
     ):
         """
         Set up model so that current and voltage are states.
@@ -111,8 +111,6 @@ class EISSimulation:
             Thickness of negative electrode for reference electrode placement.
         L_s : float (optional)
             Thickness of separator for reference electrode placement.
-        L_p : float (optional)
-            Thickness of positive electrode for reference electrode placement.
         """
         pybamm.logger.info(f"Start setting up {self.model_name} for EIS")
 
@@ -124,6 +122,9 @@ class EISSimulation:
         new_model.variables["Voltage variable [V]"] = V_cell
         if three_electrode is None:
             V = new_model.variables["Voltage [V]"]
+            # Add an algebraic equation for the voltage variable
+            new_model.algebraic[V_cell] = V_cell - V
+            new_model.initial_conditions[V_cell] = new_model.param.ocv_init
         elif three_electrode == "positive":
             # Create a voltage variable
             V = (
@@ -131,27 +132,32 @@ class EISSimulation:
                     new_model.variables["Positive electrode potential [V]"],
                     'right'
                 )
-                - new_model.variables["Electrolyte potential [V]"](
-                    L_n + reference_electrode_location * (L_s - L_n)
+                - pybamm.expression_tree.unary_operators.EvaluateAt(
+                    new_model.variables["Electrolyte potential [V]"],
+                    L_n + reference_electrode_location * L_s
                 )
             )
+            # Add an algebraic equation for the voltage variable
+            new_model.algebraic[V_cell] = V_cell - V
+            new_model.initial_conditions[V_cell] = new_model.param.p.prim.U_init
         elif three_electrode == "negative":
             V = (
                 pybamm.boundary_value(
                     new_model.variables["Negative electrode potential[V]"],
                     'left'
                 )
-                - new_model.variables["Electrolyte potential [V]"](
-                    L_n + reference_electrode_location * (L_s - L_n)
+                - pybamm.expression_tree.unary_operators.EvaluateAt(
+                    new_model.variables["Electrolyte potential [V]"],
+                    L_n + reference_electrode_location * L_s
                 )
             )
+            # Add an algebraic equation for the voltage variable
+            new_model.algebraic[V_cell] = V_cell - V
+            new_model.initial_conditions[V_cell] = new_model.param.n.prim.U_init
         else:
             raise ValueError(
                 "Set `three_electrode` to None, 'positive', or 'negative'."
             )
-        # Add an algebraic equation for the voltage variable
-        new_model.algebraic[V_cell] = V_cell - V
-        new_model.initial_conditions[V_cell] = new_model.param.ocv_init
 
         # Now make current density a variable
         # To do so, we replace all instances of the current in the model with a current
