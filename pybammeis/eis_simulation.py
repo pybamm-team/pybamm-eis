@@ -143,7 +143,7 @@ class EISSimulation:
         elif three_electrode == "negative":
             V = (
                 pybamm.boundary_value(
-                    new_model.variables["Negative electrode potential[V]"],
+                    new_model.variables["Negative electrode potential [V]"],
                     'left'
                 )
                 - pybamm.expression_tree.unary_operators.EvaluateAt(
