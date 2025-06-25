@@ -98,12 +98,15 @@ class EISSimulation:
         new_model = model.new_copy()
 
         # Create a voltage variable
-        V_cell = pybamm.Variable("Voltage variable [V]")
-        new_model.variables["Voltage variable [V]"] = V_cell
-        V = new_model.variables[target]
-        # Add an algebraic equation for the voltage variable
-        new_model.algebraic[V_cell] = V_cell - V
-        new_model.initial_conditions[V_cell] = 0
+        target_variable = pybamm.Variable("Target variable [V]")
+        new_model.variables["Target variable [V]"] = target_variable
+        # Add an algebraic equation for the target variable
+        new_model.algebraic[target_variable] = (
+            target_variable - new_model.variables[target]
+        )
+        # While better initial values may induce better performance,
+        # the solvers usually are fine with a generic 0.
+        new_model.initial_conditions[target_variable] = 0
 
         # Now make current density a variable
         # To do so, we replace all instances of the current in the model with a current
