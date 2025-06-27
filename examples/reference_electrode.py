@@ -12,9 +12,7 @@ L_s = model.param.s.L  # "Separator thickness [m]"
 model.insert_reference_electrode(L_n + 0.5 * L_s)
 
 # Create simulation and choose the reference electrode voltage as target
-eis_sim = pybammeis.EISSimulation(
-    model, target="Negative electrode 3E potential [V]"
-)
+eis_sim = pybammeis.EISSimulation(model, target="Negative electrode 3E potential [V]")
 
 # Choose frequencies and calculate impedance
 frequencies = np.logspace(-4, 4, 30)
