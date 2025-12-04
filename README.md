@@ -21,7 +21,7 @@ eis_sim.nyquist_plot()
 
 ## 💻 About PyBaMM
 
-The example simulations use the package [PyBaMM](www.pybamm.org) (Python Battery Mathematical Modelling). PyBaMM is an open-source battery simulation package
+The example simulations use the package [PyBaMM](https://www.pybamm.org) (Python Battery Mathematical Modelling). PyBaMM is an open-source battery simulation package
 written in Python. Our mission is to accelerate battery modelling research by
 providing open-source tools for multi-institutional, interdisciplinary collaboration.
 Broadly, PyBaMM consists of
