@@ -18,6 +18,8 @@ class EISSimulation:
     ----------
     model : :class:`pybamm.BaseModel`
         The model to be simulated
+    target : str (optional)
+        Set to the voltage you wish to calculate the impedance for.
     parameter_values: :class:`pybamm.ParameterValues` (optional)
         Parameters and their corresponding numerical values.
     geometry: :class:`pybamm.Geometry` (optional)
@@ -34,6 +36,7 @@ class EISSimulation:
     def __init__(
         self,
         model,
+        target="Voltage [V]",
         parameter_values=None,
         geometry=None,
         submesh_types=None,
@@ -48,7 +51,8 @@ class EISSimulation:
 
         # Set up the model for EIS
         pybamm.logger.info(f"Start setting up {self.model_name} for EIS")
-        self.model = self.set_up_model_for_eis(model)
+        parameter_values = parameter_values or model.default_parameter_values
+        self.model = self.set_up_model_for_eis(model, target)
 
         # Create and build a simulation to conviniently build the model
         parameter_values = parameter_values or model.default_parameter_values
@@ -75,7 +79,7 @@ class EISSimulation:
         pybamm.logger.info(f"Finished setting up {self.model_name} for EIS")
         pybamm.logger.info(f"Set-up time: {self.set_up_time}")
 
-    def set_up_model_for_eis(self, model):
+    def set_up_model_for_eis(self, model, target):
         """
         Set up model so that current and voltage are states.
         This formulation is suitable for EIS calculations in
@@ -85,6 +89,8 @@ class EISSimulation:
         ----------
         model : :class:`pybamm.BaseModel`
             Model to set up for EIS.
+        target : str (optional)
+            Set to the variable you wish to calculate the impedance for.
         """
         pybamm.logger.info(f"Start setting up {self.model_name} for EIS")
 
@@ -92,12 +98,15 @@ class EISSimulation:
         new_model = model.new_copy()
 
         # Create a voltage variable
-        V_cell = pybamm.Variable("Voltage variable [V]")
-        new_model.variables["Voltage variable [V]"] = V_cell
-        V = new_model.variables["Voltage [V]"]
-        # Add an algebraic equation for the voltage variable
-        new_model.algebraic[V_cell] = V_cell - V
-        new_model.initial_conditions[V_cell] = new_model.param.ocv_init
+        target_variable = pybamm.Variable("Target variable [V]")
+        new_model.variables["Target variable [V]"] = target_variable
+        # Add an algebraic equation for the target variable
+        new_model.algebraic[target_variable] = (
+            target_variable - new_model.variables[target]
+        )
+        # While better initial values may induce better performance,
+        # the solvers usually are fine with a generic 0.
+        new_model.initial_conditions[target_variable] = 0
 
         # Now make current density a variable
         # To do so, we replace all instances of the current in the model with a current
