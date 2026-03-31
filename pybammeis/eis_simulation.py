@@ -29,6 +29,10 @@ class EISSimulation:
     spatial_methods: dict (optional)
         A dictionary of the types of spatial method to use on each
         domain (e.g. pybamm.FiniteVolume)
+    initial_soc : float or str, optional
+        Initial State of Charge (SOC) for the simulation. If a float, must be
+        between 0 and 1. Can also be a voltage string e.g. "3.8 V". If given,
+        overwrites the initial concentrations provided in the parameter set.
     """
 
     def __init__(
@@ -39,6 +43,7 @@ class EISSimulation:
         submesh_types=None,
         var_pts=None,
         spatial_methods=None,
+        initial_soc=None,
     ):
         # Set attributes
         self.model_name = model.name
@@ -61,7 +66,8 @@ class EISSimulation:
             var_pts=var_pts,
             spatial_methods=spatial_methods,
         )
-        sim.build()
+        sim.build(initial_soc=initial_soc)
+        self._sim = sim
         self.built_model = sim.built_model
 
         # Get scale factor for the impedance (PyBaMM model may have set scales for the
@@ -174,7 +180,7 @@ class EISSimulation:
 
         pybamm.logger.info(f"Finish constructing matrix problem for {self.model_name}")
 
-    def solve(self, frequencies, method="direct", inputs=None):
+    def solve(self, frequencies, method="direct", inputs=None, initial_soc=None):
         """
         Compute the impedance at the given frequencies by solving problem
 
@@ -194,6 +200,10 @@ class EISSimulation:
             or 'bicgstab'. Default is 'direct'.
         inputs : dict, optional
             Any input parameters to pass to the model when solving
+        initial_soc : float, optional
+            Initial State of Charge (SOC) for the simulation. Must be between
+            0 and 1. If given, overwrites the initial concentrations provided
+            in the parameter set.
 
         Returns
         -------
@@ -203,6 +213,9 @@ class EISSimulation:
 
         pybamm.logger.info(f"Start calculating impedance for {self.model_name}")
         timer = pybamm.Timer()
+
+        if initial_soc is not None:
+            self._sim.build(initial_soc=initial_soc)
 
         self._build_matrix_problem(inputs_dict=inputs)
 
