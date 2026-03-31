@@ -200,10 +200,11 @@ class EISSimulation:
             or 'bicgstab'. Default is 'direct'.
         inputs : dict, optional
             Any input parameters to pass to the model when solving
-        initial_soc : float, optional
-            Initial State of Charge (SOC) for the simulation. Must be between
-            0 and 1. If given, overwrites the initial concentrations provided
-            in the parameter set.
+        initial_soc : float or str, optional
+            Initial State of Charge (SOC) for the simulation. If a float, must
+            be between 0 and 1. Can also be a voltage string e.g. "3.8 V". If
+            given, overwrites the initial concentrations provided in the
+            parameter set.
 
         Returns
         -------
