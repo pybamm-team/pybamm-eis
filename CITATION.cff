@@ -11,5 +11,5 @@ authors:
     family-names: Timms
   - given-names: Colin
     family-names: Please
-version: "0.1.5" # Update this when you release a new version
+version: "0.1.6" # Update this when you release a new version
 repository-code: 'https://www.github.com/pybamm-team/pybamm-eis'
