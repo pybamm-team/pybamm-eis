@@ -166,12 +166,8 @@ def test_initial_soc_with_inputs():
 
     # Same SOC, different active material fraction → different capacity
     # → different initial concentrations → different impedance
-    z1 = eis_sim.solve(
-        frequencies, initial_soc=0.5, inputs={"eps_n": 0.75}
-    )
-    z2 = eis_sim.solve(
-        frequencies, initial_soc=0.5, inputs={"eps_n": 0.5}
-    )
+    z1 = eis_sim.solve(frequencies, initial_soc=0.5, inputs={"eps_n": 0.75})
+    z2 = eis_sim.solve(frequencies, initial_soc=0.5, inputs={"eps_n": 0.5})
     assert not np.allclose(z1, z2)
 
 
