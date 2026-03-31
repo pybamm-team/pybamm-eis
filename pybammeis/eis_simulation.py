@@ -214,8 +214,14 @@ class EISSimulation:
         pybamm.logger.info(f"Start calculating impedance for {self.model_name}")
         timer = pybamm.Timer()
 
+        # Re-build initial conditions for the requested SOC. We pass inputs
+        # as well because parameters that affect capacity (and therefore the
+        # SOC ↔ concentration mapping) may be optimiser inputs that change
+        # between iterations. PyBaMM's Simulation.build uses an eSOH
+        # fingerprint internally, so repeated calls with the same
+        # (initial_soc, inputs) combination are essentially free.
         if initial_soc is not None:
-            self._sim.build(initial_soc=initial_soc)
+            self._sim.build(initial_soc=initial_soc, inputs=inputs)
 
         self._build_matrix_problem(inputs_dict=inputs)
 
