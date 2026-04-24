@@ -1,5 +1,13 @@
 # PyBaMM EIS
 
+> **⚠️ Archive Notice:** This repository is now a public archive. The EIS functionality is now part of [PyBaMM core](https://docs.pybamm.org/) via `pybamm.EISSimulation`.
+>
+> **Migration:** Replace `pybammeis.EISSimulation` with `pybamm.EISSimulation`:
+> ```python
+> import pybamm
+> eis_sim = pybamm.EISSimulation(model)
+> ```
+
 PyBaMM EIS rapidly calculates the electrochemical impedance of any battery model defined using PyBaMM, see [the documentation](https://pybamm-eis.readthedocs.io/en/latest/)
 
 ## 🔋 Using PyBaMM EIS
